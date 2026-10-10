@@ -1,0 +1,8 @@
+project_id = "fisioterapia"
+
+[auth]
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173/restablecer-contrasena"]
+
+[functions.provision-user]
+verify_jwt = false
