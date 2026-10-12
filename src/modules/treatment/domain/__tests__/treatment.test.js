@@ -11,13 +11,28 @@ describe('TreatmentIntervention', () => {
       contraction: 'concentrica',
       sets: 3,
       repetitions: 10,
+      illustrationKey: 'bridge',
     });
     expect(intervention.toPrimitives()).toMatchObject({
       kind: 'exercise',
       contraction: 'concentrica',
       sets: 3,
       repetitions: 10,
+      illustrationKey: 'bridge',
     });
+  });
+
+  it('rejects illustration keys outside the exercise gallery', () => {
+    expect(
+      () =>
+        new TreatmentIntervention({
+          clinicalEvaluationId: 'evaluation-1',
+          kind: 'exercise',
+          name: 'Ejercicio',
+          sets: 3,
+          illustrationKey: 'unknown',
+        }),
+    ).toThrow('La ilustración seleccionada no es válida.');
   });
 
   it('rejects invalid exercise dosage', () => {

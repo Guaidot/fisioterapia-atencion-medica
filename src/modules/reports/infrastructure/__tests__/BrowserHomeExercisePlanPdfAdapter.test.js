@@ -35,6 +35,7 @@ describe('BrowserHomeExercisePlanPdfAdapter', () => {
           sets: 3,
           repetitions: 10,
           instructions: 'Realizar & revisar',
+          illustrationKey: 'bridge',
         },
       ],
     });
@@ -44,6 +45,13 @@ describe('BrowserHomeExercisePlanPdfAdapter', () => {
     expect(written.join('')).toContain('Flexión &lt;activa&gt;');
     expect(written.join('')).toContain('class="patient-card"');
     expect(written.join('')).toContain('class="dosage"');
+    expect(written.join('')).toContain('Puente de glúteos · ilustración orientativa');
+    expect(written.join('')).toContain('/images/exercises/puente-de-gluteos.webp');
+    expect(written.join('')).toContain('<img src="');
+    expect(written.join('')).toContain('Posición inicial');
+    expect(written.join('')).toContain('Aprieta suavemente los glúteos');
+    expect(written.join('')).toContain('Glúteo mayor e isquiotibiales');
+    expect(written.join('')).toContain('/images/muscles/puente-de-gluteos-sin-apoyo-muscle.png');
     expect(written.join('')).toContain('Imprimir o guardar como PDF');
     expect(written.join('')).toContain('@page { size: A4;');
     expect(written.join('')).toContain('Firma del paciente');

@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useEvaluationTreatment } from '../hooks/useTreatment.js';
 import { useContainer } from '../../../../app/container.jsx';
+import {
+  EXERCISE_ILLUSTRATIONS,
+  getExerciseIllustration,
+} from '../../exerciseIllustrations.js';
 
 const EMPTY_INTERVENTION = {
   kind: 'exercise',
@@ -17,6 +21,7 @@ const EMPTY_INTERVENTION = {
   applicationMinutes: '',
   mode: '',
   instructions: '',
+  illustrationKey: '',
 };
 
 const EMPTY_MEASUREMENT = {
@@ -46,6 +51,7 @@ function interventionPayload(form, clinicalEvaluationId) {
     kind: form.kind,
     name: form.name,
     instructions: form.instructions,
+    illustrationKey: form.illustrationKey || null,
   };
 
   if (form.kind === 'exercise') {
@@ -124,6 +130,7 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
   const [reportReady, setReportReady] = useState(false);
   const container = useContainer();
   const reportUseCase = container.getReportUseCases().generateHomeExercisePlan;
+  const selectedIllustration = getExerciseIllustration(interventionForm.illustrationKey);
   const {
     interventions,
     measurements,
@@ -209,31 +216,91 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
             </div>
 
             {interventionForm.kind === 'exercise' ? (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <label className="block text-sm text-slate-700">
-                  <span className="label">Tipo de contracción</span>
-                  <select
-                    className="input min-h-11"
-                    value={interventionForm.contraction}
-                    onChange={(event) =>
-                      setInterventionForm({
-                        ...interventionForm,
-                        contraction: event.target.value,
-                      })
-                    }
-                  >
-                    <option value="">No especificada</option>
-                    <option value="isometrica">Isométrica</option>
-                    <option value="concentrica">Concéntrica</option>
-                    <option value="excentrica">Excéntrica</option>
-                  </select>
-                </label>
-                <NumberInput label="Series" min="1" value={interventionForm.sets} onChange={(e) => setInterventionForm({ ...interventionForm, sets: e.target.value })} />
-                <NumberInput label="Repeticiones" min="1" value={interventionForm.repetitions} onChange={(e) => setInterventionForm({ ...interventionForm, repetitions: e.target.value })} />
-                <NumberInput label="Duración (segundos)" min="1" value={interventionForm.durationSeconds} onChange={(e) => setInterventionForm({ ...interventionForm, durationSeconds: e.target.value })} />
-                <NumberInput label="Pausa (segundos)" min="0" value={interventionForm.restSeconds} onChange={(e) => setInterventionForm({ ...interventionForm, restSeconds: e.target.value })} />
-                <NumberInput label="Frecuencia (veces/semana)" min="1" value={interventionForm.frequencyPerWeek} onChange={(e) => setInterventionForm({ ...interventionForm, frequencyPerWeek: e.target.value })} />
-              </div>
+              <>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <label className="block text-sm text-slate-700 sm:col-span-2 lg:col-span-3">
+                    <span className="label">Ilustración para la pauta (opcional)</span>
+                    <select
+                      className="input min-h-11"
+                      value={interventionForm.illustrationKey}
+                      onChange={(event) =>
+                        setInterventionForm({
+                          ...interventionForm,
+                          illustrationKey: event.target.value,
+                        })
+                      }
+                    >
+                      <option value="">Sin ilustración</option>
+                      {EXERCISE_ILLUSTRATIONS.map((illustration) => (
+                        <option key={illustration.key} value={illustration.key}>
+                          {illustration.label}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="mt-1 block text-xs text-slate-500">
+                      Elige solo una ilustración que corresponda al ejercicio indicado.
+                    </span>
+                  </label>
+                  {selectedIllustration && (
+                    <div className="sm:col-span-2 lg:col-span-3">
+                      <img
+                        className="h-32 w-full max-w-sm rounded-lg border border-slate-200 object-contain"
+                        src={selectedIllustration.imagePath}
+                        alt={`Vista previa: ${selectedIllustration.label}`}
+                      />
+                      <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm sm:grid-cols-2">
+                        <div>
+                          <p className="font-semibold text-slate-700">Posición inicial</p>
+                          <p className="text-slate-600">{selectedIllustration.startingPosition}</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-700">Ejecución</p>
+                          <p className="text-slate-600">{selectedIllustration.execution}</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-700">Músculos principales</p>
+                          <p className="text-slate-600">{selectedIllustration.muscles}</p>
+                          <img
+                            className="mt-2 h-36 w-full max-w-xs rounded border border-slate-200 object-contain"
+                            src={selectedIllustration.muscleImagePath}
+                            alt={`Músculos trabajados: ${selectedIllustration.muscles}`}
+                            onError={(event) => {
+                              event.currentTarget.hidden = true;
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-700">Recomendación</p>
+                          <p className="text-slate-600">{selectedIllustration.tip}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <label className="block text-sm text-slate-700">
+                    <span className="label">Tipo de contracción</span>
+                    <select
+                      className="input min-h-11"
+                      value={interventionForm.contraction}
+                      onChange={(event) =>
+                        setInterventionForm({
+                          ...interventionForm,
+                          contraction: event.target.value,
+                        })
+                      }
+                    >
+                      <option value="">No especificada</option>
+                      <option value="isometrica">Isométrica</option>
+                      <option value="concentrica">Concéntrica</option>
+                      <option value="excentrica">Excéntrica</option>
+                    </select>
+                  </label>
+                  <NumberInput label="Series" min="1" value={interventionForm.sets} onChange={(e) => setInterventionForm({ ...interventionForm, sets: e.target.value })} />
+                  <NumberInput label="Repeticiones" min="1" value={interventionForm.repetitions} onChange={(e) => setInterventionForm({ ...interventionForm, repetitions: e.target.value })} />
+                  <NumberInput label="Duración (segundos)" min="1" value={interventionForm.durationSeconds} onChange={(e) => setInterventionForm({ ...interventionForm, durationSeconds: e.target.value })} />
+                  <NumberInput label="Pausa (segundos)" min="0" value={interventionForm.restSeconds} onChange={(e) => setInterventionForm({ ...interventionForm, restSeconds: e.target.value })} />
+                  <NumberInput label="Frecuencia (veces/semana)" min="1" value={interventionForm.frequencyPerWeek} onChange={(e) => setInterventionForm({ ...interventionForm, frequencyPerWeek: e.target.value })} />
+                </div>
+              </>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <NumberInput label="Frecuencia técnica (Hz)" step="0.01" value={interventionForm.technicalFrequencyHz} onChange={(e) => setInterventionForm({ ...interventionForm, technicalFrequencyHz: e.target.value })} />

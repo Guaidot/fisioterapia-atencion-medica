@@ -1,5 +1,6 @@
 import { Entity } from '../../../../shared/domain/Entity.js';
 import { DomainError } from '../../../../shared/domain/DomainError.js';
+import { getExerciseIllustration } from '../../exerciseIllustrations.js';
 
 const KINDS = ['exercise', 'physical_agent'];
 const CONTRACTIONS = ['isometrica', 'concentrica', 'excentrica'];
@@ -24,6 +25,7 @@ export class TreatmentIntervention extends Entity {
     applicationMinutes = null,
     mode = null,
     instructions = '',
+    illustrationKey = null,
     createdBy = null,
     createdAt = null,
   }) {
@@ -36,6 +38,9 @@ export class TreatmentIntervention extends Entity {
     this.kind = kind;
     this.name = name.trim();
     this.instructions = instructions?.trim() ?? '';
+    if (illustrationKey != null && !getExerciseIllustration(illustrationKey)) {
+      throw new DomainError('La ilustración seleccionada no es válida.');
+    }
     this.createdBy = createdBy;
     this.createdAt = createdAt;
 
@@ -59,6 +64,7 @@ export class TreatmentIntervention extends Entity {
       this.durationSeconds = durationSeconds;
       this.restSeconds = restSeconds;
       this.frequencyPerWeek = frequencyPerWeek;
+      this.illustrationKey = illustrationKey;
       this.technicalFrequencyHz = null;
       this.intensity = null;
       this.intensityUnit = null;
@@ -86,6 +92,7 @@ export class TreatmentIntervention extends Entity {
       this.intensityUnit = intensityUnit;
       this.applicationMinutes = applicationMinutes;
       this.mode = mode;
+      this.illustrationKey = null;
     }
   }
 
@@ -129,6 +136,7 @@ export class TreatmentIntervention extends Entity {
       applicationMinutes: this.applicationMinutes,
       mode: this.mode,
       instructions: this.instructions,
+      illustrationKey: this.illustrationKey,
       createdBy: this.createdBy,
       createdAt: this.createdAt,
     };

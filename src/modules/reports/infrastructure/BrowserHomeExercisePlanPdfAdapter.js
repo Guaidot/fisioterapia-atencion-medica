@@ -1,4 +1,5 @@
 import { HomeExercisePlanPdfPort } from '../domain/ports/HomeExercisePlanPdfPort.js';
+import { getExerciseIllustration } from '../../treatment/exerciseIllustrations.js';
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (character) => {
@@ -44,12 +45,28 @@ function phaseLabel(phase) {
 
 function exerciseMarkup(exercise, index) {
   const dose = dosage(exercise);
+  const illustration = getExerciseIllustration(exercise.illustrationKey);
+  const details = illustration;
   return `
     <article class="exercise">
       <div class="exercise-heading">
         <span class="exercise-number">${String(index + 1).padStart(2, '0')}</span>
         <h3>${escapeHtml(exercise.name)}</h3>
       </div>
+      ${illustration
+        ? `<figure class="illustration"><img src="${escapeHtml(illustration.imagePath)}" alt="${escapeHtml(illustration.label)}"><figcaption>${escapeHtml(illustration.label)} · ilustración orientativa</figcaption></figure>`
+        : ''}
+      ${details
+        ? `<div class="exercise-details">
+            <div><span class="field-label">Posición inicial</span><p>${escapeHtml(details.startingPosition)}</p></div>
+            <div><span class="field-label">Ejecución</span><p>${escapeHtml(details.execution)}</p></div>
+            <div class="muscle-details">
+              <div><span class="field-label">Músculos principales</span><p>${escapeHtml(details.muscles)}</p></div>
+              <img src="${escapeHtml(details.muscleImagePath)}" alt="Músculos trabajados: ${escapeHtml(details.muscles)}" onerror="this.hidden=true">
+            </div>
+            <div><span class="field-label">Recomendación</span><p>${escapeHtml(details.tip)}</p></div>
+          </div>`
+        : ''}
       ${dose.length
         ? `<ul class="dosage">${dose.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`
         : '<p class="missing-dose">Dosificación no especificada</p>'}
@@ -110,6 +127,13 @@ export class BrowserHomeExercisePlanPdfAdapter extends HomeExercisePlanPdfPort {
             .exercise-heading { display: flex; align-items: center; gap: 11px; }
             .exercise-number { display: grid; width: 31px; height: 31px; flex: 0 0 31px; place-items: center; border-radius: 9px; background: var(--pale); color: var(--teal); font-size: 11px; font-weight: 800; }
             .exercise h3 { margin: 0; color: var(--ink); font-size: 15px; font-weight: 700; }
+            .illustration { margin: 14px 0 0 42px; }
+            .illustration img { display: block; width: 100%; max-width: 420px; max-height: 240px; object-fit: contain; object-position: left center; }
+            .illustration figcaption { margin-top: 4px; color: var(--muted); font-size: 10px; }
+            .exercise-details { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; margin: 14px 0 0 42px; }
+            .exercise-details p { margin: 0; color: #405760; font-size: 12px; overflow-wrap: anywhere; }
+            .muscle-details { display: grid; grid-template-columns: 1fr minmax(90px, 145px); align-items: center; gap: 8px; }
+            .muscle-details img { display: block; width: 100%; max-width: 145px; max-height: 130px; object-fit: contain; }
             .dosage { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0 0 42px; padding: 0; list-style: none; }
             .dosage li { padding: 5px 9px; border-radius: 6px; background: #f1f6f7; color: #294c55; font-size: 11px; font-weight: 650; }
             .missing-dose { margin: 10px 0 0 42px; color: #9a5c12; font-size: 11px; }
@@ -129,6 +153,7 @@ export class BrowserHomeExercisePlanPdfAdapter extends HomeExercisePlanPdfPort {
               .hero { padding-top: 24px; }
               h1 { font-size: 25px; }
               .document-tag { font-size: 9px; }
+              .exercise-details { grid-template-columns: 1fr; }
             }
             @media print {
               body { background: #fff; font-size: 12px; }
@@ -191,7 +216,8 @@ export class BrowserHomeExercisePlanPdfAdapter extends HomeExercisePlanPdfPort {
               <div>
                 <strong>Importante</strong>
                 Realiza los ejercicios de acuerdo con estas indicaciones. Si tienes dudas sobre cómo
-                ejecutarlos o necesitas modificar la pauta, consulta con tu profesional.
+                ejecutarlos o necesitas modificar la pauta, consulta con tu profesional. Las
+                ilustraciones son orientativas y no sustituyen las instrucciones profesionales.
               </div>
             </aside>
             <section class="signatures" aria-label="Firmas">

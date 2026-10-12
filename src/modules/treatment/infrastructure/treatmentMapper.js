@@ -21,6 +21,7 @@ export function rowToIntervention(row) {
     applicationMinutes: row.application_minutes,
     mode: row.mode,
     instructions: row.instructions,
+    illustrationKey: row.illustration_key,
     createdBy: row.created_by,
     createdAt: row.created_at,
   });
@@ -44,6 +45,7 @@ export function interventionToRow(intervention) {
     application_minutes: item.applicationMinutes,
     mode: item.mode,
     instructions: item.instructions,
+    illustration_key: item.illustrationKey,
   };
 }
 
