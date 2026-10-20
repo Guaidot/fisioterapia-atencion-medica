@@ -19,8 +19,10 @@ export function useCreateClinicalHistory() {
 
   return useMutation({
     mutationFn: (input) => useCases.create.execute(input),
-    onSuccess: (_data, variables) =>
-      queryClient.invalidateQueries({ queryKey: ['clinicalHistories', variables.patientId] }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['clinicalHistories', variables.patientId] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardOverview'] });
+    },
   });
 }
 
@@ -31,7 +33,9 @@ export function useUpdateClinicalHistory() {
 
   return useMutation({
     mutationFn: (input) => useCases.update.execute(input),
-    onSuccess: (_data, variables) =>
-      queryClient.invalidateQueries({ queryKey: ['clinicalHistories', variables.patientId] }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['clinicalHistories', variables.patientId] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardOverview'] });
+    },
   });
 }

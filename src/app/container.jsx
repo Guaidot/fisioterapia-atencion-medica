@@ -35,6 +35,7 @@ import {
   ListTreatmentCatalogUseCase,
   SaveTreatmentCatalogItemUseCase,
 } from '../modules/treatment/application/usecases/TreatmentCatalogUseCases.js';
+import { GetDashboardOverviewUseCase } from '../modules/dashboard/application/usecases/GetDashboardOverview.js';
 
 /**
  * Composition Root: única fuente de cableado (Singleton de la aplicación).
@@ -54,6 +55,7 @@ class AppContainer {
     this.#auditRepository = RepositoryFactory.create('audit');
     this.#treatmentRepository = RepositoryFactory.create('treatment');
     this.#treatmentCatalogRepository = RepositoryFactory.create('treatmentCatalog');
+    this.#dashboardRepository = RepositoryFactory.create('dashboard');
     this.homeExercisePlanPdfPort = new BrowserHomeExercisePlanPdfAdapter();
     this.userRepository = new SupabaseUserRepository();
     this.userProvisioningPort = new SupabaseUserProvisioningAdapter();
@@ -75,6 +77,7 @@ class AppContainer {
       treatmentCreate: null,
       treatmentCatalogList: null,
       treatmentCatalogSave: null,
+      dashboardOverview: null,
       romList: null,
       romProgressList: null,
       romCreate: null,
@@ -96,6 +99,7 @@ class AppContainer {
   #auditRepository;
   #treatmentRepository;
   #treatmentCatalogRepository;
+  #dashboardRepository;
 
   static getInstance() {
     if (!AppContainer.#instance) {
@@ -184,6 +188,13 @@ class AppContainer {
       list: this.useCases.treatmentCatalogList,
       save: this.useCases.treatmentCatalogSave,
     };
+  }
+
+  getDashboardUseCases() {
+    this.useCases.dashboardOverview ??= new GetDashboardOverviewUseCase(
+      this.#dashboardRepository,
+    );
+    return { overview: this.useCases.dashboardOverview };
   }
 
   getReportUseCases() {

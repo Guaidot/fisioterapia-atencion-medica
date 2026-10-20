@@ -15,6 +15,7 @@ import { ResetPasswordPage } from '../shared/ui/pages/ResetPasswordPage.jsx';
 import { TreatmentCatalogPage } from '../modules/treatment/ui/pages/TreatmentCatalogPage.jsx';
 import { allowedRoles } from '../modules/users/domain/permissions.js';
 import { ROLES } from '../modules/users/domain/entities/Role.js';
+import { DashboardPage } from '../modules/dashboard/ui/pages/DashboardPage.jsx';
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage />, errorElement: <ErrorBoundary /> },
@@ -30,7 +31,8 @@ export const router = createBrowserRouter([
     ),
     errorElement: <ErrorBoundary />,
     children: [
-      { index: true, element: <PatientsListPage /> },
+      { index: true, element: <DashboardPage /> },
+      { path: 'resumen', element: <DashboardPage /> },
       { path: 'pacientes', element: <PatientsListPage /> },
       { path: 'pacientes/nuevo', element: <PatientFormPage /> },
       { path: 'pacientes/:id', element: <PatientDetailPage /> },

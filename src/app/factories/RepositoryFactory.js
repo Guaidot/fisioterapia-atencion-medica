@@ -4,6 +4,7 @@ import { SupabaseUserRepository } from '../../modules/users/infrastructure/Supab
 import { SupabaseAuditRepository } from '../../modules/audit/infrastructure/SupabaseAuditRepository.js';
 import { SupabaseTreatmentRepository } from '../../modules/treatment/infrastructure/SupabaseTreatmentRepository.js';
 import { SupabaseTreatmentCatalogRepository } from '../../modules/treatment/infrastructure/SupabaseTreatmentCatalogRepository.js';
+import { SupabaseDashboardRepository } from '../../modules/dashboard/infrastructure/SupabaseDashboardRepository.js';
 
 /**
  * Factory de repositorios (patrón Factory).
@@ -25,6 +26,8 @@ export class RepositoryFactory {
         return new SupabaseTreatmentRepository();
       case 'treatmentCatalog':
         return new SupabaseTreatmentCatalogRepository();
+      case 'dashboard':
+        return new SupabaseDashboardRepository();
       default:
         throw new Error(`Repositorio desconocido: ${name}`);
     }

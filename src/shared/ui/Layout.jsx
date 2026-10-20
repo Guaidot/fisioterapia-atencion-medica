@@ -5,6 +5,7 @@ import { useMyProfile } from '../../modules/users/ui/hooks/useUsers.js';
 import { can } from '../../modules/users/domain/permissions.js';
 
 const NAV_ITEMS = [
+  { to: '/', label: 'Resumen', permission: 'patients', enabled: true },
   { to: '/pacientes', label: 'Pacientes', permission: 'patients', enabled: true },
   { to: '/usuarios', label: 'Usuarios', permission: 'users', enabled: true },
   { to: '/auditoria', label: 'Auditoría', permission: 'audit', enabled: true },
@@ -45,6 +46,7 @@ export function Layout() {
       <NavLink
         key={item.to}
         to={item.to}
+        end={item.to === '/'}
         onClick={() => setMobileMenuOpen(false)}
         className={({ isActive }) =>
           `flex min-h-11 items-center rounded-xl px-3 py-2 text-sm ${

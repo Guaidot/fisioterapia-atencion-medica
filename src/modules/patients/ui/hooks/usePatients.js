@@ -18,7 +18,10 @@ export function useCreatePatient() {
 
   return useMutation({
     mutationFn: (input) => useCases.create.execute(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['patients'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardOverview'] });
+    },
   });
 }
 
@@ -47,7 +50,10 @@ export function useUpdatePatient() {
 
   return useMutation({
     mutationFn: ({ id, input }) => useCases.update.execute(id, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['patients'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardOverview'] });
+    },
   });
 }
 
@@ -58,7 +64,10 @@ export function useArchivePatient() {
 
   return useMutation({
     mutationFn: (id) => useCases.archive.execute(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['patients'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardOverview'] });
+    },
   });
 }
 
@@ -69,6 +78,9 @@ export function useRestorePatient() {
 
   return useMutation({
     mutationFn: (id) => useCases.restore.execute(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['patients'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardOverview'] });
+    },
   });
 }

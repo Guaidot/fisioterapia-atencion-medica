@@ -19,7 +19,7 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const from = location.state?.from?.pathname ?? '/pacientes';
+  const from = location.state?.from?.pathname ?? '/';
 
   async function handleSubmit(e) {
     e.preventDefault();
