@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { to: '/pacientes', label: 'Pacientes', permission: 'patients', enabled: true },
   { to: '/usuarios', label: 'Usuarios', permission: 'users', enabled: true },
   { to: '/auditoria', label: 'Auditoría', permission: 'audit', enabled: true },
+  { to: '/catalogos-terapeuticos', label: 'Catálogo terapéutico', permission: 'catalogs', enabled: true },
   { to: '/triaje', label: 'Triaje', permission: 'triaje', enabled: false },
   { to: '/historia', label: 'Historia clínica', permission: 'clinicalHistory', enabled: false },
   { to: '/electroterapia', label: 'Electroterapia', permission: 'electrotherapy', enabled: false },
@@ -66,17 +67,20 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <aside className="hidden w-64 flex-col border-r border-slate-200 bg-white md:flex">
-        <div className="border-b border-slate-200 px-5 py-4">
-          <p className="text-base font-semibold text-brand-700">Fisioterapia</p>
-          <p className="text-xs text-slate-500">Gestión clínica</p>
+      <aside className="hidden w-64 flex-col border-r border-slate-200/80 bg-white/90 shadow-sm shadow-slate-900/[0.02] backdrop-blur md:flex">
+        <div className="flex justify-center border-b border-slate-100 px-5 py-4">
+          <img
+            src="/images/logo_fisio.jpg"
+            alt="Logo de Milángela Duarte, fisioterapeuta"
+            className="h-24 w-full max-w-[13rem] object-contain"
+          />
         </div>
-        <nav className="flex-1 space-y-1 p-3">
+        <nav aria-label="Navegación principal" className="flex-1 space-y-1.5 p-3">
           {renderNavItems()}
         </nav>
       </aside>
 
-      <main className="min-w-0 flex-1 p-3 sm:p-4 md:p-6">
+      <main className="min-w-0 flex-1 p-3 sm:p-5 md:p-7">
         {mobileMenuOpen && (
           <button
             type="button"
@@ -86,16 +90,14 @@ export function Layout() {
           />
         )}
         <div className={`relative mb-5 md:mb-6 ${mobileMenuOpen ? 'z-50' : ''}`}>
-          <header className="border-b border-slate-200 pb-3 md:flex md:min-h-14 md:items-center md:justify-between md:gap-3 md:pb-4">
+          <header className="rounded-2xl border border-slate-200/80 bg-white/85 px-4 py-3 shadow-sm shadow-slate-900/[0.03] backdrop-blur md:flex md:min-h-16 md:items-center md:justify-between md:gap-3 md:px-5">
           <div className="flex items-center justify-between gap-3 md:contents">
-            <div className="flex min-w-0 items-center gap-2 md:hidden">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-sm font-bold text-white">
-                F
-              </span>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-brand-700">Fisioterapia</p>
-                <p className="truncate text-xs text-slate-500">Gestión clínica</p>
-              </div>
+            <div className="flex min-w-0 items-center md:hidden">
+              <img
+                src="/images/logo_fisio.jpg"
+                alt="Logo de Milángela Duarte, fisioterapeuta"
+                className="h-14 w-36 object-contain"
+              />
             </div>
             <div className="flex shrink-0 items-center gap-1 md:order-3">
               <button

@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { useAuditEvents } from '../hooks/useAuditEvents.js';
+import { Pagination } from '../../../../shared/ui/components/Pagination.jsx';
 
 const ACTION_LABELS = {
   INSERT: 'Creación',
@@ -9,6 +11,9 @@ const ACTION_LABELS = {
 const ENTITY_LABELS = {
   patient: 'Paciente',
   clinical_evaluation: 'Evaluación clínica',
+  treatment_intervention: 'Intervención terapéutica',
+  rom_measurement: 'Medición funcional',
+  treatment_catalog_item: 'Elemento del catálogo terapéutico',
 };
 
 function formatDate(value) {
@@ -19,27 +24,34 @@ function formatDate(value) {
 }
 
 export function AuditLogPage() {
-  const { data: events = [], isLoading, isError, error } = useAuditEvents();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const { data, isLoading, isError, error } = useAuditEvents({ page, pageSize });
+  const events = data?.events ?? [];
+  const total = data?.total ?? 0;
 
   return (
     <section className="mx-auto w-full max-w-screen-2xl space-y-5">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-800 lg:text-3xl">
-          Auditoría clínica
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Registro de cambios en pacientes y evaluaciones. Solo visible para administradores.
-        </p>
+      <header className="page-heading">
+        <div>
+          <h1 className="page-title">Auditoría clínica</h1>
+          <p className="page-description">
+            Registro de cambios en pacientes, evaluaciones y catálogos. Solo visible para administradores.
+          </p>
+        </div>
+        <span className="inline-flex w-fit items-center rounded-full bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700">
+          {total} {total === 1 ? 'cambio' : 'cambios'}
+        </span>
       </header>
 
-      <div className="card overflow-hidden p-0">
+      <div className="list-panel">
         {isLoading ? (
           <p className="p-5 text-sm text-slate-500">Cargando auditoría…</p>
         ) : isError ? (
           <p role="alert" className="p-5 text-sm text-red-700">
             No se pudo cargar la auditoría: {error.message}
           </p>
-        ) : events.length === 0 ? (
+        ) : total === 0 ? (
           <p className="p-5 text-sm text-slate-500">Todavía no hay cambios registrados.</p>
         ) : (
           <ul className="divide-y divide-slate-100">
@@ -98,6 +110,18 @@ export function AuditLogPage() {
               </li>
             ))}
           </ul>
+        )}
+        {!isLoading && !isError && total > 0 && (
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            totalItems={total}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
+          />
         )}
       </div>
     </section>

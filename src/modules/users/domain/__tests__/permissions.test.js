@@ -16,4 +16,19 @@ describe('clinical access permissions', () => {
     expect(can(ROLES.TERAPEUTA, 'users')).toBe(false);
     expect(can(ROLES.ASISTENTE, 'users')).toBe(false);
   });
+
+  it('allows therapists to view catalogs but reserves management for admins', () => {
+    expect(can(ROLES.ADMIN, 'catalogs')).toBe(true);
+    expect(can(ROLES.TERAPEUTA, 'catalogs')).toBe(true);
+    expect(can(ROLES.ASISTENTE, 'catalogs')).toBe(false);
+    expect(can(ROLES.ADMIN, 'catalogManagement')).toBe(true);
+    expect(can(ROLES.TERAPEUTA, 'catalogManagement')).toBe(false);
+  });
+
+  it('allows therapists to create exercises without catalog management access', () => {
+    expect(can(ROLES.ADMIN, 'catalogExerciseCreate')).toBe(true);
+    expect(can(ROLES.TERAPEUTA, 'catalogExerciseCreate')).toBe(true);
+    expect(can(ROLES.ASISTENTE, 'catalogExerciseCreate')).toBe(false);
+    expect(can(ROLES.TERAPEUTA, 'catalogManagement')).toBe(false);
+  });
 });

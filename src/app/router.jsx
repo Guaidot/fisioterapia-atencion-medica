@@ -12,6 +12,8 @@ import { UsersAdminPage } from '../modules/users/ui/pages/UsersAdminPage.jsx';
 import { BootstrapAdminPage } from '../modules/users/ui/pages/BootstrapAdminPage.jsx';
 import { AuditLogPage } from '../modules/audit/ui/pages/AuditLogPage.jsx';
 import { ResetPasswordPage } from '../shared/ui/pages/ResetPasswordPage.jsx';
+import { TreatmentCatalogPage } from '../modules/treatment/ui/pages/TreatmentCatalogPage.jsx';
+import { allowedRoles } from '../modules/users/domain/permissions.js';
 import { ROLES } from '../modules/users/domain/entities/Role.js';
 
 export const router = createBrowserRouter([
@@ -45,6 +47,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireRole roles={[ROLES.ADMIN]}>
             <AuditLogPage />
+          </RequireRole>
+        ),
+      },
+      {
+        path: 'catalogos-terapeuticos',
+        element: (
+          <RequireRole roles={allowedRoles('catalogs')}>
+            <TreatmentCatalogPage />
           </RequireRole>
         ),
       },

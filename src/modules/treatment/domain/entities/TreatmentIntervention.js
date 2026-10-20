@@ -11,6 +11,7 @@ export class TreatmentIntervention extends Entity {
   constructor({
     id = null,
     clinicalEvaluationId,
+    catalogItemId = null,
     kind,
     name,
     contraction = null,
@@ -26,6 +27,7 @@ export class TreatmentIntervention extends Entity {
     mode = null,
     instructions = '',
     illustrationKey = null,
+    parameterConfig = null,
     createdBy = null,
     createdAt = null,
   }) {
@@ -35,6 +37,7 @@ export class TreatmentIntervention extends Entity {
     if (!KINDS.includes(kind)) throw new DomainError('Tipo de tratamiento inválido.');
 
     this.clinicalEvaluationId = clinicalEvaluationId;
+    this.catalogItemId = catalogItemId;
     this.kind = kind;
     this.name = name.trim();
     this.instructions = instructions?.trim() ?? '';
@@ -71,12 +74,29 @@ export class TreatmentIntervention extends Entity {
       this.applicationMinutes = null;
       this.mode = null;
     } else {
+      if (catalogItemId != null) {
+        const fields = parameterConfig?.fields ?? [];
+        const intensityUnits = parameterConfig?.intensityUnits ?? [];
+        for (const [field, value] of [
+          ['technicalFrequencyHz', technicalFrequencyHz],
+          ['intensity', intensity],
+          ['applicationMinutes', applicationMinutes],
+          ['mode', mode],
+        ]) {
+          if (value != null && !fields.includes(field)) {
+            throw new DomainError(`El catálogo no habilita el parámetro ${field}.`);
+          }
+        }
+        if (
+          intensityUnit != null &&
+          (!fields.includes('intensity') || !intensityUnits.includes(intensityUnit))
+        ) {
+          throw new DomainError('La unidad de intensidad no está configurada en el catálogo.');
+        }
+      }
       this.assertOptionalPositive(technicalFrequencyHz, 'La frecuencia técnica');
       this.assertOptionalPositive(intensity, 'La intensidad');
       this.assertOptionalPositiveInteger(applicationMinutes, 'El tiempo de aplicación');
-      if (applicationMinutes == null) {
-        throw new DomainError('El tiempo de aplicación del agente físico es obligatorio.');
-      }
       if (intensityUnit != null && !INTENSITY_UNITS.includes(intensityUnit)) {
         throw new DomainError('Unidad de intensidad inválida.');
       }
@@ -122,6 +142,7 @@ export class TreatmentIntervention extends Entity {
     return {
       id: this.id,
       clinicalEvaluationId: this.clinicalEvaluationId,
+      catalogItemId: this.catalogItemId,
       kind: this.kind,
       name: this.name,
       contraction: this.contraction,

@@ -49,26 +49,22 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 p-6">
-      <div className="card w-full max-w-md">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-sky-50 via-white to-teal-50 p-4 sm:p-6">
+      <div aria-hidden="true" className="pointer-events-none absolute -left-24 -top-24 size-72 rounded-full bg-sky-200/30 blur-3xl" />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 -right-20 size-80 rounded-full bg-teal-200/30 blur-3xl" />
+      <div className="card relative w-full max-w-md !rounded-3xl !border-white/80 !bg-white/95 !p-7 shadow-xl shadow-slate-900/[0.06] backdrop-blur sm:!p-9">
         <div className="mb-4 flex justify-center">
-          <div className="flex size-14 items-center justify-center rounded-full bg-brand-50 text-brand-700">
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              className="size-7"
-            >
-              <rect x="5" y="10" width="14" height="11" rx="2" />
-              <path d="M8 10V7a4 4 0 1 1 8 0v3M12 14v3" strokeLinecap="round" />
-            </svg>
-          </div>
+          <img
+            src="/images/logo_fisio.jpg"
+            alt="Logo de Milángela Duarte, fisioterapeuta"
+            className="h-36 w-full max-w-[19rem] object-contain sm:h-40"
+          />
         </div>
-        <h1 className="mb-1 text-center text-xl font-semibold text-brand-700">Fisioterapia</h1>
-        <p className="mb-6 text-center text-sm text-slate-500">
-          Inicia sesión para acceder al sistema.
+        <h1 className="mb-1 text-center text-2xl font-semibold tracking-tight text-slate-900">
+          Iniciar sesión
+        </h1>
+        <p className="mb-7 text-center text-sm text-slate-500">
+          Accede a tu espacio de gestión clínica.
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <TextField
@@ -87,11 +83,11 @@ export function LoginPage() {
             hint="Mínimo 8 caracteres."
           />
           {error && <p className="text-sm text-red-600">{error}</p>}
-          <button type="submit" className="btn-primary w-full" disabled={loading}>
+          <button type="submit" className="btn-primary min-h-12 w-full !rounded-xl shadow-sm shadow-brand-900/10" disabled={loading}>
             {loading ? 'Ingresando…' : 'Ingresar'}
           </button>
 
-          <p className="text-center text-sm text-slate-500">
+          <p className="pt-1 text-center text-sm text-slate-500">
             No tienes cuenta?{' '}
             <Link to="/register" className="font-medium text-brand-600 hover:text-brand-700">
               Regístrate aquí

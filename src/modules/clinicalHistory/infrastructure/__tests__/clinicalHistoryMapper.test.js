@@ -12,6 +12,8 @@ describe('clinicalHistoryMapper', () => {
       zone: 'hombro',
       phase: 'aguda',
       eva_score: 4,
+      clinical_observations: 'Dolor al elevar el brazo.',
+      vitals_measured_at: '2025-01-01T00:15:00.000Z',
       created_by: 'therapist-id',
       blood_pressure_systolic: 120,
       blood_pressure_diastolic: 80,
@@ -37,6 +39,8 @@ describe('clinicalHistoryMapper', () => {
       sleepQuality: 'reparador',
       bloodPressureMedications: ['losartan'],
       otherMedication: 'Vitamina D',
+      clinicalObservations: 'Dolor al elevar el brazo.',
+      vitalsMeasuredAt: '2025-01-01T00:15:00.000Z',
     });
   });
 
@@ -47,6 +51,9 @@ describe('clinicalHistoryMapper', () => {
       lesionType: 'tendinosa',
       zone: 'hombro',
       phase: 'aguda',
+      evaScore: null,
+      clinicalObservations: 'Prueba',
+      vitalsMeasuredAt: '2025-01-01T00:15:00.000Z',
       bloodPressureSystolic: 120,
       bloodPressureDiastolic: 80,
       bloodPressureMedications: ['losartan'],
@@ -57,6 +64,9 @@ describe('clinicalHistoryMapper', () => {
       blood_pressure_systolic: 120,
       blood_pressure_diastolic: 80,
       blood_pressure_medications: ['losartan'],
+      eva_score: null,
+      clinical_observations: 'Prueba',
+      vitals_measured_at: '2025-01-01T00:15:00.000Z',
     });
     expect(clinicalHistoryToRow(history)).not.toHaveProperty('therapist_id');
   });

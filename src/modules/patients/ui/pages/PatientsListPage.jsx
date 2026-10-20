@@ -3,6 +3,8 @@ import { useArchivePatient, usePatients, useRestorePatient } from '../hooks/useP
 import { PatientCreateModal } from './PatientCreateModal.jsx';
 import { PatientHistoryModal } from '../../../clinicalHistory/ui/pages/PatientHistoryModal.jsx';
 import { PatientArchiveModal } from './PatientArchiveModal.jsx';
+import { Pagination } from '../../../../shared/ui/components/Pagination.jsx';
+import { usePagination } from '../../../../shared/ui/hooks/usePagination.js';
 
 export function PatientsListPage() {
   const [showArchived, setShowArchived] = useState(false);
@@ -27,6 +29,7 @@ export function PatientsListPage() {
       String(value ?? '').toLowerCase().includes(q),
     );
   });
+  const pagination = usePagination(filtered, `${showArchived}:${query}`);
 
   async function confirmDelete() {
     if (!patientToArchive) return;
@@ -59,12 +62,10 @@ export function PatientsListPage() {
 
   return (
     <div className="mx-auto w-full max-w-screen-2xl">
-      <div className="mb-5 flex flex-col gap-4 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="page-heading">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-800 lg:text-3xl">
-            Pacientes
-          </h1>
-          <p className="text-sm text-slate-500 lg:text-base">
+          <h1 className="page-title">Pacientes</h1>
+          <p className="page-description">
             {showArchived
               ? 'Pacientes archivados; sus evaluaciones se conservan.'
               : 'Gestión de pacientes y su historia clínica.'}
@@ -93,7 +94,7 @@ export function PatientsListPage() {
         </div>
       </div>
 
-      <div className="mb-4 sm:mb-5">
+      <div className="mb-5">
         <input
           type="search"
           className="input min-h-11 max-w-md lg:text-base"
@@ -110,8 +111,8 @@ export function PatientsListPage() {
             {showArchived ? 'No hay pacientes archivados.' : 'No se encontraron pacientes.'}
           </div>
         ) : (
-          filtered.map((p) => (
-            <article key={p.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          pagination.visibleItems.map((p) => (
+            <article key={p.id} className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-900/[0.03]">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h2 className="break-words font-semibold text-slate-800">
@@ -190,7 +191,7 @@ export function PatientsListPage() {
         )}
       </section>
 
-      <div className="card hidden overflow-x-auto p-0 md:block">
+      <div className="list-panel hidden overflow-x-auto md:block">
         {filtered.length === 0 ? (
           <p className="p-6 text-sm text-slate-500">
             {showArchived ? 'No hay pacientes archivados.' : 'No se encontraron pacientes.'}
@@ -209,7 +210,7 @@ export function PatientsListPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filtered.map((p) => (
+              {pagination.visibleItems.map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3 font-medium text-slate-800 lg:px-5 lg:py-4">
                     {[p.lastName, p.firstName].filter(Boolean).join(', ') || 'Sin nombre'}
@@ -274,6 +275,17 @@ export function PatientsListPage() {
           </table>
         )}
       </div>
+      {filtered.length > 0 && (
+        <div className="list-panel mt-4">
+          <Pagination
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            totalItems={filtered.length}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+          />
+        </div>
+      )}
 
       {createModalOpen && (
         <PatientCreateModal

@@ -1,5 +1,8 @@
 import { ClinicalHistoryRepository } from '../../domain/ports/ClinicalHistoryRepository.js';
-import { ClinicalHistory } from '../../domain/entities/ClinicalHistory.js';
+import {
+  ClinicalHistory,
+  VITAL_SIGN_FIELDS,
+} from '../../domain/entities/ClinicalHistory.js';
 import { DomainError } from '../../../../shared/domain/DomainError.js';
 
 export class UpdateClinicalHistoryUseCase {
@@ -22,9 +25,21 @@ export class UpdateClinicalHistoryUseCase {
       throw new DomainError('No se puede cambiar el paciente de una evaluación existente.');
     }
 
+    const vitalsChanged = VITAL_SIGN_FIELDS.some(
+      (field) => (input[field] ?? null) !== (existing[field] ?? null),
+    );
+    const hasVitals = VITAL_SIGN_FIELDS.some((field) => input[field] != null);
+    const vitalsMeasuredAt = Object.prototype.hasOwnProperty.call(input, 'vitalsMeasuredAt')
+      ? input.vitalsMeasuredAt
+      : existing.vitalsMeasuredAt;
+    if (hasVitals && !vitalsMeasuredAt && vitalsChanged) {
+      throw new DomainError('Registra la fecha y hora de medición de los signos vitales.');
+    }
+
     const history = new ClinicalHistory({
       ...input,
       id,
+      vitalsMeasuredAt,
       therapistId: existing.therapistId,
       createdAt: existing.createdAt,
     });

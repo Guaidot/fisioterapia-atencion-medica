@@ -10,15 +10,19 @@ export class SupabaseAuditRepository extends AuditRepository {
     this.client = client;
   }
 
-  async findRecent({ limit }) {
-    const { data, error } = await this.client
+  async findRecent({ offset, limit }) {
+    const { data, count, error } = await this.client
       .from(TABLE)
       .select(
         'id, entity_type, record_id, patient_id, action, actor_id, occurred_at, old_data, new_data, actor:profiles!clinical_audit_logs_actor_id_fkey(full_name, email)',
+        { count: 'exact' },
       )
       .order('occurred_at', { ascending: false })
-      .limit(limit);
+      .range(offset, offset + limit - 1);
     if (error) throw error;
-    return (data ?? []).map(rowToAuditEvent);
+    return {
+      events: (data ?? []).map(rowToAuditEvent),
+      total: count ?? 0,
+    };
   }
 }

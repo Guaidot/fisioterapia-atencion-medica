@@ -23,6 +23,13 @@ export const ANATOMICAL_ZONES = [
 ];
 
 export const EVOLUTION_PHASES = ['aguda', 'subaguda', 'cronica'];
+export const VITAL_SIGN_FIELDS = [
+  'bloodPressureSystolic',
+  'bloodPressureDiastolic',
+  'oxygenSaturation',
+  'temperatureCelsius',
+  'heartRate',
+];
 
 export class ClinicalHistory extends Entity {
   constructor({
@@ -32,9 +39,11 @@ export class ClinicalHistory extends Entity {
     lesionType,
     zone,
     phase,
-    evaScore = 0,
+    evaScore = null,
     therapistId = null,
     createdAt = null,
+    clinicalObservations = '',
+    vitalsMeasuredAt = null,
     bloodPressureSystolic = null,
     bloodPressureDiastolic = null,
     oxygenSaturation = null,
@@ -54,15 +63,48 @@ export class ClinicalHistory extends Entity {
     this.lesionType = this.assertOneOf(lesionType, LESION_TYPES, 'Tipo de lesión');
     this.zone = this.assertOneOf(zone, ANATOMICAL_ZONES, 'Zona anatómica');
     this.phase = this.assertOneOf(phase, EVOLUTION_PHASES, 'Fase de evolución');
-    this.evaScore = new EvaScore(evaScore);
+    this.evaScore = evaScore == null ? null : new EvaScore(evaScore);
     this.therapistId = therapistId;
     this.createdAt = createdAt;
+    if (typeof clinicalObservations !== 'string' || clinicalObservations.length > 2000) {
+      throw new DomainError('Las observaciones clínicas deben ser texto y no superar 2000 caracteres.');
+    }
+    this.clinicalObservations = clinicalObservations.trim();
+    if (
+      vitalsMeasuredAt != null &&
+      (typeof vitalsMeasuredAt !== 'string' || !Number.isFinite(Date.parse(vitalsMeasuredAt)))
+    ) {
+      throw new DomainError('La fecha y hora de medición de signos vitales no es válida.');
+    }
+    this.vitalsMeasuredAt = vitalsMeasuredAt;
     this.assertBloodPressurePair(bloodPressureSystolic, bloodPressureDiastolic);
     this.bloodPressureSystolic = bloodPressureSystolic;
     this.bloodPressureDiastolic = bloodPressureDiastolic;
     this.oxygenSaturation = oxygenSaturation;
     this.temperatureCelsius = temperatureCelsius;
     this.heartRate = heartRate;
+    if (
+      oxygenSaturation != null &&
+      (!Number.isFinite(oxygenSaturation) || oxygenSaturation < 0 || oxygenSaturation > 100)
+    ) {
+      throw new DomainError('La saturación de oxígeno debe estar entre 0 y 100.');
+    }
+    if (
+      temperatureCelsius != null &&
+      (!Number.isFinite(temperatureCelsius) || temperatureCelsius <= 0 || temperatureCelsius > 99.99)
+    ) {
+      throw new DomainError('La temperatura debe ser mayor que cero y no superar 99.99 °C.');
+    }
+    if (heartRate != null && (!Number.isInteger(heartRate) || heartRate <= 0)) {
+      throw new DomainError('La frecuencia cardíaca debe ser un entero positivo.');
+    }
+    if (
+      id == null &&
+      VITAL_SIGN_FIELDS.some((field) => this[field] != null) &&
+      this.vitalsMeasuredAt == null
+    ) {
+      throw new DomainError('Registra la fecha y hora de medición de los signos vitales.');
+    }
     this.sleepHours = sleepHours;
     this.sleepQuality = sleepQuality;
     this.bloodPressureMedications = bloodPressureMedications ?? [];
@@ -106,10 +148,12 @@ export class ClinicalHistory extends Entity {
       lesionType: this.lesionType,
       zone: this.zone,
       phase: this.phase,
-      evaScore: this.evaScore.value,
-      evaLevel: this.evaScore.level,
+      evaScore: this.evaScore?.value ?? null,
+      evaLevel: this.evaScore?.level ?? null,
       therapistId: this.therapistId,
       createdAt: this.createdAt,
+      clinicalObservations: this.clinicalObservations,
+      vitalsMeasuredAt: this.vitalsMeasuredAt,
       bloodPressureSystolic: this.bloodPressureSystolic,
       bloodPressureDiastolic: this.bloodPressureDiastolic,
       oxygenSaturation: this.oxygenSaturation,

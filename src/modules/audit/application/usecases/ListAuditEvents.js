@@ -10,11 +10,20 @@ export class ListAuditEventsUseCase {
     this.#repository = repository;
   }
 
-  async execute({ limit = 100 } = {}) {
-    if (!Number.isInteger(limit) || limit < 1 || limit > 200) {
-      throw new RangeError('El límite de auditoría debe estar entre 1 y 200.');
+  async execute({ page = 1, pageSize = 10 } = {}) {
+    if (!Number.isInteger(page) || page < 1) {
+      throw new RangeError('La página de auditoría debe ser un entero positivo.');
     }
-    const events = await this.#repository.findRecent({ limit });
-    return events.map((event) => event.toPrimitives());
+    if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
+      throw new RangeError('El tamaño de página de auditoría debe estar entre 1 y 100.');
+    }
+    const result = await this.#repository.findRecent({
+      offset: (page - 1) * pageSize,
+      limit: pageSize,
+    });
+    return {
+      events: result.events.map((event) => event.toPrimitives()),
+      total: result.total,
+    };
   }
 }

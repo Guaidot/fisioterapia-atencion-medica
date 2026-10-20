@@ -1,7 +1,13 @@
 import { Entity } from '../../../../shared/domain/Entity.js';
 import { DomainError } from '../../../../shared/domain/DomainError.js';
 
-const ENTITY_TYPES = ['patient', 'clinical_evaluation'];
+const ENTITY_TYPES = [
+  'patient',
+  'clinical_evaluation',
+  'treatment_intervention',
+  'rom_measurement',
+  'treatment_catalog_item',
+];
 const ACTIONS = ['INSERT', 'UPDATE', 'DELETE'];
 
 export class AuditEvent extends Entity {

@@ -5,9 +5,13 @@ import {
   EXERCISE_ILLUSTRATIONS,
   getExerciseIllustration,
 } from '../../exerciseIllustrations.js';
+import { useTreatmentCatalog } from '../hooks/useTreatmentCatalog.js';
+import { Pagination } from '../../../../shared/ui/components/Pagination.jsx';
+import { usePagination } from '../../../../shared/ui/hooks/usePagination.js';
 
 const EMPTY_INTERVENTION = {
   kind: 'exercise',
+  catalogItemId: '',
   name: '',
   contraction: '',
   sets: '',
@@ -49,6 +53,7 @@ function interventionPayload(form, clinicalEvaluationId) {
   const base = {
     clinicalEvaluationId,
     kind: form.kind,
+    catalogItemId: form.catalogItemId || null,
     name: form.name,
     instructions: form.instructions,
     illustrationKey: form.illustrationKey || null,
@@ -106,7 +111,14 @@ function NumberInput({ label, value, onChange, min = '1', max, step = '1', requi
   );
 }
 
-function TextInput({ label, value, onChange, required = false, maxLength = 200 }) {
+function TextInput({
+  label,
+  value,
+  onChange,
+  required = false,
+  maxLength = 200,
+  readOnly = false,
+}) {
   return (
     <label className="block text-sm text-slate-700">
       <span className="label">{label}</span>
@@ -115,6 +127,7 @@ function TextInput({ label, value, onChange, required = false, maxLength = 200 }
         value={value}
         required={required}
         maxLength={maxLength}
+        readOnly={readOnly}
         onChange={onChange}
       />
     </label>
@@ -131,6 +144,11 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
   const container = useContainer();
   const reportUseCase = container.getReportUseCases().generateHomeExercisePlan;
   const selectedIllustration = getExerciseIllustration(interventionForm.illustrationKey);
+  const catalogQuery = useTreatmentCatalog({ kind: interventionForm.kind });
+  const selectedCatalogItem = catalogQuery.data?.find(
+    (item) => item.id === interventionForm.catalogItemId,
+  );
+  const configuredAgentFields = selectedCatalogItem?.parameterConfig.fields ?? null;
   const {
     interventions,
     measurements,
@@ -205,10 +223,38 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
                   <option value="physical_agent">Agente físico</option>
                 </select>
               </label>
+              <label className="block text-sm text-slate-700">
+                <span className="label">Seleccionar del catálogo (opcional)</span>
+                <select
+                  className="input min-h-11"
+                  value={interventionForm.catalogItemId}
+                  onChange={(event) => {
+                    const item = catalogQuery.data?.find((entry) => entry.id === event.target.value);
+                    setInterventionForm({
+                      ...interventionForm,
+                      catalogItemId: item?.id ?? '',
+                      name: item?.name ?? '',
+                      illustrationKey: item?.illustrationKey ?? '',
+                      intensityUnit: '',
+                    });
+                  }}
+                >
+                  <option value="">Registro manual</option>
+                  {(catalogQuery.data ?? []).map((item) => (
+                    <option key={item.id} value={item.id}>{item.name}</option>
+                  ))}
+                </select>
+                {catalogQuery.isError && (
+                  <span role="alert" className="mt-1 block text-xs text-red-700">
+                    No se pudo cargar el catálogo: {catalogQuery.error.message}. Puedes continuar con registro manual.
+                  </span>
+                )}
+              </label>
               <TextInput
                 label={interventionForm.kind === 'exercise' ? 'Ejercicio' : 'Equipo o agente'}
                 required
                 value={interventionForm.name}
+                readOnly={Boolean(selectedCatalogItem)}
                 onChange={(event) =>
                   setInterventionForm({ ...interventionForm, name: event.target.value })
                 }
@@ -223,6 +269,7 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
                     <select
                       className="input min-h-11"
                       value={interventionForm.illustrationKey}
+                      disabled={Boolean(selectedCatalogItem)}
                       onChange={(event) =>
                         setInterventionForm({
                           ...interventionForm,
@@ -302,35 +349,57 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
                 </div>
               </>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <NumberInput label="Frecuencia técnica (Hz)" step="0.01" value={interventionForm.technicalFrequencyHz} onChange={(e) => setInterventionForm({ ...interventionForm, technicalFrequencyHz: e.target.value })} />
-                <NumberInput label="Intensidad" step="0.01" value={interventionForm.intensity} onChange={(e) => setInterventionForm({ ...interventionForm, intensity: e.target.value })} />
-                <label className="block text-sm text-slate-700">
-                  <span className="label">Unidad de intensidad</span>
-                  <select
-                    className="input min-h-11"
-                    value={interventionForm.intensityUnit}
-                    onChange={(event) => setInterventionForm({ ...interventionForm, intensityUnit: event.target.value })}
-                  >
-                    <option value="">No indicada</option>
-                    <option value="mA">mA</option>
-                    <option value="W">W</option>
-                    <option value="W/cm2">W/cm²</option>
-                  </select>
-                </label>
-                <NumberInput label="Aplicación (minutos)" min="1" value={interventionForm.applicationMinutes} onChange={(e) => setInterventionForm({ ...interventionForm, applicationMinutes: e.target.value })} />
-                <label className="block text-sm text-slate-700">
-                  <span className="label">Modo</span>
-                  <select
-                    className="input min-h-11"
-                    value={interventionForm.mode}
-                    onChange={(event) => setInterventionForm({ ...interventionForm, mode: event.target.value })}
-                  >
-                    <option value="">No indicado</option>
-                    <option value="continuo">Continuo</option>
-                    <option value="pulsado">Pulsado</option>
-                  </select>
-                </label>
+              <div className="space-y-3">
+                {configuredAgentFields?.length === 0 && (
+                  <p className="text-sm text-slate-600">
+                    Este agente no tiene parámetros configurados. Un administrador puede habilitar campos en el catálogo.
+                  </p>
+                )}
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {(!selectedCatalogItem || configuredAgentFields.includes('technicalFrequencyHz')) && (
+                    <NumberInput label="Frecuencia técnica (Hz)" step="0.01" value={interventionForm.technicalFrequencyHz} onChange={(e) => setInterventionForm({ ...interventionForm, technicalFrequencyHz: e.target.value })} />
+                  )}
+                  {(!selectedCatalogItem || configuredAgentFields.includes('intensity')) && (
+                    <NumberInput label="Intensidad" step="0.01" value={interventionForm.intensity} onChange={(e) => setInterventionForm({ ...interventionForm, intensity: e.target.value })} />
+                  )}
+                  {(!selectedCatalogItem || configuredAgentFields.includes('intensity')) && (
+                    <label className="block text-sm text-slate-700">
+                      <span className="label">Unidad de intensidad</span>
+                      <select
+                        className="input min-h-11"
+                        value={interventionForm.intensityUnit}
+                        onChange={(event) => setInterventionForm({ ...interventionForm, intensityUnit: event.target.value })}
+                      >
+                        <option value="">No indicada</option>
+                        {(selectedCatalogItem?.parameterConfig.intensityUnits ?? ['mA', 'W', 'W/cm2']).map((unit) => (
+                          <option key={unit} value={unit}>{unit === 'W/cm2' ? 'W/cm²' : unit}</option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                  {(!selectedCatalogItem || configuredAgentFields.includes('applicationMinutes')) && (
+                    <NumberInput label="Aplicación (minutos)" min="1" value={interventionForm.applicationMinutes} onChange={(e) => setInterventionForm({ ...interventionForm, applicationMinutes: e.target.value })} />
+                  )}
+                  {(!selectedCatalogItem || configuredAgentFields.includes('mode')) && (
+                    <label className="block text-sm text-slate-700">
+                      <span className="label">Modo</span>
+                      <select
+                        className="input min-h-11"
+                        value={interventionForm.mode}
+                        onChange={(event) => setInterventionForm({ ...interventionForm, mode: event.target.value })}
+                      >
+                        <option value="">No indicado</option>
+                        <option value="continuo">Continuo</option>
+                        <option value="pulsado">Pulsado</option>
+                      </select>
+                    </label>
+                  )}
+                </div>
+                {selectedCatalogItem && configuredAgentFields?.length > 0 && (
+                  <p className="text-xs text-slate-500">
+                    Los parámetros habilitados son opcionales y no implican una dosis recomendada.
+                  </p>
+                )}
               </div>
             )}
 
@@ -416,66 +485,88 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
 }
 
 function InterventionList({ query }) {
+  const items = query.data ?? [];
+  const pagination = usePagination(items);
   if (query.isLoading) return <p className="text-sm text-slate-500">Cargando intervenciones…</p>;
   if (query.isError) return <p role="alert" className="text-sm text-red-700">No se pudieron cargar las intervenciones: {query.error.message}</p>;
-  if (query.data.length === 0) return <p className="text-sm text-slate-500">Aún no hay intervenciones registradas.</p>;
+  if (items.length === 0) return <p className="text-sm text-slate-500">Aún no hay intervenciones registradas.</p>;
 
   return (
-    <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200">
-      {query.data.map((item) => (
-        <li key={item.id} className="space-y-1 p-3 text-sm">
-          <p className="font-medium text-slate-800">
-            {item.kind === 'exercise' ? 'Ejercicio' : 'Agente físico'}: {item.name}
-          </p>
-          {item.kind === 'exercise' ? (
-            <p className="text-slate-600">
-              {item.contraction ? `${CONTRACTION_LABELS[item.contraction]} · ` : ''}
-              {item.sets ? `${item.sets} series · ` : ''}
-              {item.repetitions ? `${item.repetitions} repeticiones · ` : ''}
-              {item.durationSeconds ? `${item.durationSeconds} seg · ` : ''}
-              {item.restSeconds != null ? `${item.restSeconds} seg pausa · ` : ''}
-              {item.frequencyPerWeek ? `${item.frequencyPerWeek} veces/semana` : ''}
+    <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white">
+      <ul className="divide-y divide-slate-100">
+        {pagination.visibleItems.map((item) => (
+          <li key={item.id} className="space-y-1 p-3 text-sm">
+            <p className="font-medium text-slate-800">
+              {item.kind === 'exercise' ? 'Ejercicio' : 'Agente físico'}: {item.name}
             </p>
-          ) : (
-            <p className="text-slate-600">
-              {item.technicalFrequencyHz ? `${item.technicalFrequencyHz} Hz · ` : ''}
-              {item.intensity ? `${item.intensity} ${item.intensityUnit ?? ''} · ` : ''}
-              {item.applicationMinutes ? `${item.applicationMinutes} min · ` : ''}
-              {item.mode ?? ''}
-            </p>
-          )}
-          {item.instructions && <p className="whitespace-pre-wrap text-slate-600">{item.instructions}</p>}
-        </li>
-      ))}
-    </ul>
+            {item.kind === 'exercise' ? (
+              <p className="text-slate-600">
+                {item.contraction ? `${CONTRACTION_LABELS[item.contraction]} · ` : ''}
+                {item.sets ? `${item.sets} series · ` : ''}
+                {item.repetitions ? `${item.repetitions} repeticiones · ` : ''}
+                {item.durationSeconds ? `${item.durationSeconds} seg · ` : ''}
+                {item.restSeconds != null ? `${item.restSeconds} seg pausa · ` : ''}
+                {item.frequencyPerWeek ? `${item.frequencyPerWeek} veces/semana` : ''}
+              </p>
+            ) : (
+              <p className="text-slate-600">
+                {item.technicalFrequencyHz ? `${item.technicalFrequencyHz} Hz · ` : ''}
+                {item.intensity ? `${item.intensity} ${item.intensityUnit ?? ''} · ` : ''}
+                {item.applicationMinutes ? `${item.applicationMinutes} min · ` : ''}
+                {item.mode ?? ''}
+              </p>
+            )}
+            {item.instructions && <p className="whitespace-pre-wrap text-slate-600">{item.instructions}</p>}
+          </li>
+        ))}
+      </ul>
+      <Pagination
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        totalItems={items.length}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPageSize}
+      />
+    </div>
   );
 }
 
 function MeasurementList({ query }) {
+  const items = query.data ?? [];
+  const pagination = usePagination(items);
   if (query.isLoading) return <p className="text-sm text-slate-500">Cargando mediciones…</p>;
   if (query.isError) return <p role="alert" className="text-sm text-red-700">No se pudieron cargar las mediciones: {query.error.message}</p>;
-  if (query.data.length === 0) return <p className="text-sm text-slate-500">Aún no hay mediciones registradas.</p>;
+  if (items.length === 0) return <p className="text-sm text-slate-500">Aún no hay mediciones registradas.</p>;
 
   return (
-    <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200">
-      {query.data.map((measurement) => (
-        <li key={measurement.id} className="p-3 text-sm">
-          <p className="font-medium text-slate-800">
-            {measurement.joint} · {measurement.movement}
-            {measurement.side ? ` (${measurement.side})` : ''}
-          </p>
-          <p className="text-slate-600">
-            {measurement.degrees}°
-            {measurement.referenceMinDegrees != null || measurement.referenceMaxDegrees != null
-              ? ` · Referencia: ${measurement.referenceMinDegrees ?? '—'}–${measurement.referenceMaxDegrees ?? '—'}°`
-              : ''}
-          </p>
-          {measurement.notes && <p className="whitespace-pre-wrap text-slate-600">{measurement.notes}</p>}
-          <time className="text-xs text-slate-400" dateTime={measurement.createdAt}>
-            {new Date(measurement.createdAt).toLocaleString('es-VE')}
-          </time>
-        </li>
-      ))}
-    </ul>
+    <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white">
+      <ul className="divide-y divide-slate-100">
+        {pagination.visibleItems.map((measurement) => (
+          <li key={measurement.id} className="p-3 text-sm">
+            <p className="font-medium text-slate-800">
+              {measurement.joint} · {measurement.movement}
+              {measurement.side ? ` (${measurement.side})` : ''}
+            </p>
+            <p className="text-slate-600">
+              {measurement.degrees}°
+              {measurement.referenceMinDegrees != null || measurement.referenceMaxDegrees != null
+                ? ` · Referencia: ${measurement.referenceMinDegrees ?? '—'}–${measurement.referenceMaxDegrees ?? '—'}°`
+                : ''}
+            </p>
+            {measurement.notes && <p className="whitespace-pre-wrap text-slate-600">{measurement.notes}</p>}
+            <time className="text-xs text-slate-400" dateTime={measurement.createdAt}>
+              {new Date(measurement.createdAt).toLocaleString('es-VE')}
+            </time>
+          </li>
+        ))}
+      </ul>
+      <Pagination
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        totalItems={items.length}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPageSize}
+      />
+    </div>
   );
 }

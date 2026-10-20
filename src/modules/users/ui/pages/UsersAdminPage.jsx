@@ -7,6 +7,8 @@ import {
   useUsers,
 } from '../hooks/useUsers.js';
 import { ALL_ROLES, ROLE_LABELS } from '../../domain/entities/Role.js';
+import { Pagination } from '../../../../shared/ui/components/Pagination.jsx';
+import { usePagination } from '../../../../shared/ui/hooks/usePagination.js';
 
 const ROLE_OPTIONS = ALL_ROLES.map((role) => ({ value: role, label: ROLE_LABELS[role] }));
 
@@ -29,6 +31,7 @@ export function UsersAdminPage() {
       String(value ?? '').toLowerCase().includes(query),
     );
   });
+  const pagination = usePagination(filteredUsers, search);
 
   async function saveRole(user) {
     const role = roleDrafts[user.id] ?? user.role;
@@ -83,14 +86,19 @@ export function UsersAdminPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="mb-5 sm:mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-800">Gestión de usuarios</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Usuarios registrados: consulta sus datos y administra sus roles.
-        </p>
+      <div className="page-heading">
+        <div>
+          <h1 className="page-title">Gestión de usuarios</h1>
+          <p className="page-description">
+            Consulta los datos de las cuentas y administra sus roles.
+          </p>
+        </div>
+        <span className="inline-flex w-fit items-center rounded-full bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700">
+          {users.length} {users.length === 1 ? 'usuario' : 'usuarios'}
+        </span>
       </div>
 
-      <div className="mb-4">
+      <div className="mb-5">
         <label className="sr-only" htmlFor="user-search">
           Buscar usuarios
         </label>
@@ -117,7 +125,7 @@ export function UsersAdminPage() {
         </div>
       ) : (
         <section className="space-y-3" aria-label="Usuarios registrados">
-          {filteredUsers.map((user) => {
+          {pagination.visibleItems.map((user) => {
             const selectedRole = roleDrafts[user.id] ?? user.role;
             const isCurrentUser = user.id === currentUser?.id;
             const isSaving = savingUserId === user.id;
@@ -129,7 +137,7 @@ export function UsersAdminPage() {
             return (
               <article
                 key={user.id}
-                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
+                className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-900/[0.03] sm:p-5"
               >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
@@ -229,6 +237,17 @@ export function UsersAdminPage() {
             );
           })}
         </section>
+      )}
+      {filteredUsers.length > 0 && (
+        <div className="mt-4">
+          <Pagination
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            totalItems={filteredUsers.length}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+          />
+        </div>
       )}
     </div>
   );

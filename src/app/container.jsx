@@ -31,6 +31,10 @@ import {
 } from '../modules/treatment/application/usecases/TreatmentUseCases.js';
 import { GenerateHomeExercisePlanUseCase } from '../modules/reports/application/usecases/GenerateHomeExercisePlan.js';
 import { BrowserHomeExercisePlanPdfAdapter } from '../modules/reports/infrastructure/BrowserHomeExercisePlanPdfAdapter.js';
+import {
+  ListTreatmentCatalogUseCase,
+  SaveTreatmentCatalogItemUseCase,
+} from '../modules/treatment/application/usecases/TreatmentCatalogUseCases.js';
 
 /**
  * Composition Root: única fuente de cableado (Singleton de la aplicación).
@@ -49,6 +53,7 @@ class AppContainer {
     this.#clinicalHistoryRepository = RepositoryFactory.create('clinicalHistory');
     this.#auditRepository = RepositoryFactory.create('audit');
     this.#treatmentRepository = RepositoryFactory.create('treatment');
+    this.#treatmentCatalogRepository = RepositoryFactory.create('treatmentCatalog');
     this.homeExercisePlanPdfPort = new BrowserHomeExercisePlanPdfAdapter();
     this.userRepository = new SupabaseUserRepository();
     this.userProvisioningPort = new SupabaseUserProvisioningAdapter();
@@ -68,6 +73,8 @@ class AppContainer {
       auditList: null,
       treatmentList: null,
       treatmentCreate: null,
+      treatmentCatalogList: null,
+      treatmentCatalogSave: null,
       romList: null,
       romProgressList: null,
       romCreate: null,
@@ -88,6 +95,7 @@ class AppContainer {
   #clinicalHistoryRepository;
   #auditRepository;
   #treatmentRepository;
+  #treatmentCatalogRepository;
 
   static getInstance() {
     if (!AppContainer.#instance) {
@@ -147,7 +155,10 @@ class AppContainer {
 
   getTreatmentUseCases() {
     this.useCases.treatmentList ??= new ListInterventionsUseCase(this.#treatmentRepository);
-    this.useCases.treatmentCreate ??= new CreateInterventionUseCase(this.#treatmentRepository);
+    this.useCases.treatmentCreate ??= new CreateInterventionUseCase(
+      this.#treatmentRepository,
+      this.#treatmentCatalogRepository,
+    );
     this.useCases.romList ??= new ListRomMeasurementsUseCase(this.#treatmentRepository);
     this.useCases.romProgressList ??= new ListRomMeasurementsByEvaluationsUseCase(
       this.#treatmentRepository,
@@ -159,6 +170,19 @@ class AppContainer {
       listMeasurements: this.useCases.romList,
       listMeasurementsByEvaluations: this.useCases.romProgressList,
       createMeasurement: this.useCases.romCreate,
+    };
+  }
+
+  getTreatmentCatalogUseCases() {
+    this.useCases.treatmentCatalogList ??= new ListTreatmentCatalogUseCase(
+      this.#treatmentCatalogRepository,
+    );
+    this.useCases.treatmentCatalogSave ??= new SaveTreatmentCatalogItemUseCase(
+      this.#treatmentCatalogRepository,
+    );
+    return {
+      list: this.useCases.treatmentCatalogList,
+      save: this.useCases.treatmentCatalogSave,
     };
   }
 

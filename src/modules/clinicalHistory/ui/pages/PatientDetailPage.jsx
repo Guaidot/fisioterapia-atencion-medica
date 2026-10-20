@@ -7,10 +7,22 @@ import {
   useUpdateClinicalHistory,
 } from '../hooks/useClinicalHistories.js';
 import { TextField, SelectField } from '../../../../shared/ui/components/Fields.jsx';
-import { LESION_TYPES, ANATOMICAL_ZONES, EVOLUTION_PHASES } from '../../domain/entities/ClinicalHistory.js';
+import {
+  LESION_TYPES,
+  ANATOMICAL_ZONES,
+  EVOLUTION_PHASES,
+  VITAL_SIGN_FIELDS,
+} from '../../domain/entities/ClinicalHistory.js';
 import { EvaluationTreatmentPanel } from '../../../treatment/ui/components/EvaluationTreatmentPanel.jsx';
 import { RomProgressSummary } from '../../../treatment/ui/components/RomProgressSummary.jsx';
+import {
+  clinicDateTimeToIso,
+  currentClinicDateTime,
+  formatClinicDateTime,
+} from '../../../../shared/ui/clinicDateTime.js';
 import { z } from 'zod';
+import { Pagination } from '../../../../shared/ui/components/Pagination.jsx';
+import { usePagination } from '../../../../shared/ui/hooks/usePagination.js';
 
 function numericField({ pattern, message, min, max, integer = false }) {
   let numberSchema = z.number({ invalid_type_error: message }).min(min, message);
@@ -44,6 +56,17 @@ export const historySchema = z
       max: 10,
       integer: true,
     }),
+    clinicalObservations: z.string().max(2000, 'Las observaciones no pueden superar 2000 caracteres.'),
+    vitalsMeasuredAt: z.string().refine((value) => {
+      if (value === '') return true;
+      try {
+        clinicDateTimeToIso(value);
+        return true;
+      } catch (error) {
+        if (error instanceof RangeError) return false;
+        throw error;
+      }
+    }, 'Indica una fecha y hora válida en la zona de la clínica.'),
     bloodPressureSystolic: numericField({
       pattern: /^\d+$/,
       message: 'La presión sistólica debe ser un entero positivo.',
@@ -64,9 +87,9 @@ export const historySchema = z
     }),
     temperatureCelsius: numericField({
       pattern: /^\d+(?:\.\d{1,2})?$/,
-      message: 'La temperatura debe ser positiva y tener máximo 2 decimales.',
+      message: 'La temperatura debe ser positiva, no superar 99.99 °C y tener máximo 2 decimales.',
       min: Number.MIN_VALUE,
-      max: 999.99,
+      max: 99.99,
     }),
     heartRate: numericField({
       pattern: /^\d+$/,
@@ -164,7 +187,9 @@ const EMPTY_FORM = {
   lesionType: '',
   zone: '',
   phase: '',
-  evaScore: '0',
+  evaScore: '',
+  clinicalObservations: '',
+  vitalsMeasuredAt: '',
   bloodPressureSystolic: '',
   bloodPressureDiastolic: '',
   oxygenSaturation: '',
@@ -183,7 +208,9 @@ function formFromHistory(history) {
     lesionType: history.lesionType ?? '',
     zone: history.zone ?? '',
     phase: history.phase ?? '',
-    evaScore: String(history.evaScore ?? 0),
+    evaScore: history.evaScore == null ? '' : String(history.evaScore),
+    clinicalObservations: history.clinicalObservations ?? '',
+    vitalsMeasuredAt: formatClinicDateTime(history.vitalsMeasuredAt),
     bloodPressureSystolic: history.bloodPressureSystolic == null
       ? ''
       : String(history.bloodPressureSystolic),
@@ -211,6 +238,7 @@ export function PatientDetailPage({ patientId: patientIdProp, embedded = false }
   const patient = patients.find((p) => p.id === patientId);
 
   const { data: histories = [], isLoading } = useClinicalHistories(patientId);
+  const historyPagination = usePagination(histories, patientId);
   const createHistory = useCreateClinicalHistory();
   const updateHistory = useUpdateClinicalHistory();
 
@@ -232,7 +260,7 @@ export function PatientDetailPage({ patientId: patientIdProp, embedded = false }
 
   function startNewEvaluation() {
     setEditingHistoryId(null);
-    setForm({ ...EMPTY_FORM });
+    setForm({ ...EMPTY_FORM, vitalsMeasuredAt: currentClinicDateTime() });
     setErrors({});
     setShowForm(true);
   }
@@ -262,11 +290,33 @@ export function PatientDetailPage({ patientId: patientIdProp, embedded = false }
       setErrors(fieldErrors);
       return;
     }
+    const existingEvaluation = histories.find((history) => history.id === editingHistoryId);
+    const hasVitals = VITAL_SIGN_FIELDS.some((field) => parsed.data[field] != null);
+    const vitalsChanged = VITAL_SIGN_FIELDS.some(
+      (field) => (parsed.data[field] ?? null) !== (existingEvaluation?.[field] ?? null),
+    );
+    if (
+      hasVitals &&
+      !parsed.data.vitalsMeasuredAt &&
+      (!existingEvaluation || existingEvaluation.vitalsMeasuredAt || vitalsChanged)
+    ) {
+      setErrors({
+        vitalsMeasuredAt: 'Indica cuándo se midieron los signos vitales.',
+      });
+      return;
+    }
+
     setErrors({});
     setSaving(true);
     try {
       const input = {
         ...parsed.data,
+        evaScore: parsed.data.evaScore ?? null,
+        clinicalObservations: parsed.data.clinicalObservations.trim(),
+        vitalsMeasuredAt:
+          hasVitals && parsed.data.vitalsMeasuredAt
+            ? clinicDateTimeToIso(parsed.data.vitalsMeasuredAt)
+            : null,
         sleepHours: parsed.data.sleepHours || null,
         sleepQuality: parsed.data.sleepQuality || null,
         patientId,
@@ -300,19 +350,21 @@ export function PatientDetailPage({ patientId: patientIdProp, embedded = false }
         </button>
       )}
 
-      <div className="card p-4 sm:p-5">
-        <h1 className="break-words text-xl font-semibold text-slate-800 sm:text-2xl">
-          {patient.fullName}
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Cédula: {patient.cedula} · Edad: {patient.age ?? '—'} · {patient.gender}
-          {patient.occupation ? ` · ${patient.occupation}` : ''}
-          {patient.phone ? ` · ${patient.phone}` : ''}
-        </p>
-        <div className="mt-4">
+      <div className="page-heading !mb-0">
+        <div className="min-w-0">
+          <h1 className="break-words text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
+            {patient.fullName}
+          </h1>
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            Cédula: {patient.cedula} · Edad: {patient.age ?? '—'} · {patient.gender}
+            {patient.occupation ? ` · ${patient.occupation}` : ''}
+            {patient.phone ? ` · ${patient.phone}` : ''}
+          </p>
+        </div>
+        <div>
           <button
             type="button"
-            className="btn-ghost min-h-11 !px-3 !py-2 text-xs"
+            className="btn-primary min-h-11 w-full !px-4 !py-2 text-sm sm:w-auto"
             onClick={showForm ? cancelForm : startNewEvaluation}
           >
             {showForm
@@ -373,9 +425,21 @@ export function PatientDetailPage({ patientId: patientIdProp, embedded = false }
               value={form.evaScore}
               onChange={(e) => set('evaScore', e.target.value)}
               error={errors.evaScore}
-              hint={Number(form.evaScore)}
+              hint={form.evaScore ? `${Number(form.evaScore)}/10` : undefined}
             />
           </div>
+          <label className="block text-sm text-slate-700">
+            <span className="label">Observaciones clínicas</span>
+            <textarea
+              className="input min-h-24"
+              maxLength={2000}
+              value={form.clinicalObservations}
+              onChange={(event) => set('clinicalObservations', event.target.value)}
+            />
+            {errors.clinicalObservations && (
+              <span className="mt-1 block text-xs text-red-600">{errors.clinicalObservations}</span>
+            )}
+          </label>
           <details open={Boolean(editingHistoryId)} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <summary className="min-h-11 cursor-pointer py-2 font-medium text-slate-700">
               Triaje, signos vitales y antecedentes
@@ -383,6 +447,15 @@ export function PatientDetailPage({ patientId: patientIdProp, embedded = false }
             <div className="mt-4 space-y-5">
               <section>
                 <h3 className="mb-3 text-sm font-semibold text-slate-700">Signos vitales</h3>
+                <div className="mb-3 max-w-sm">
+                  <TextField
+                    label="Fecha y hora de medición (hora de Caracas)"
+                    type="datetime-local"
+                    value={form.vitalsMeasuredAt}
+                    onChange={(event) => set('vitalsMeasuredAt', event.target.value)}
+                    error={errors.vitalsMeasuredAt}
+                  />
+                </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   <TextField
                     label="Presión sistólica (mmHg)"
@@ -419,7 +492,7 @@ export function PatientDetailPage({ patientId: patientIdProp, embedded = false }
                     label="Temperatura (°C)"
                     type="number"
                     min="0.01"
-                    max="999.99"
+                    max="99.99"
                     step="0.01"
                     inputMode="decimal"
                     value={form.temperatureCelsius}
@@ -522,9 +595,11 @@ export function PatientDetailPage({ patientId: patientIdProp, embedded = false }
 
       {histories.length > 1 && <RomProgressSummary clinicalEvaluations={histories} />}
 
-      <div className="card overflow-hidden p-0">
-        <div className="border-b border-slate-200 px-5 py-3 font-medium text-slate-700">
+      <div className="list-panel">
+        <div className="border-b border-slate-100 px-5 py-4">
+          <h2 className="font-semibold text-slate-800">
           Evaluaciones clínicas ({histories.length})
+          </h2>
         </div>
         {isLoading ? (
           <p className="p-5 text-sm text-slate-500">Cargando…</p>
@@ -532,13 +607,18 @@ export function PatientDetailPage({ patientId: patientIdProp, embedded = false }
           <p className="p-5 text-sm text-slate-500">Sin evaluaciones registradas.</p>
         ) : (
           <ul className="divide-y divide-slate-100">
-            {histories.map((h) => (
+            {historyPagination.visibleItems.map((h) => (
               <li
                 key={h.id}
                 className="flex flex-col gap-2 px-4 py-4 text-sm sm:px-5"
               >
                 <div>
                   <p className="font-medium text-slate-800">{h.diagnosis}</p>
+                  {h.clinicalObservations && (
+                    <p className="mt-1 whitespace-pre-wrap text-xs text-slate-600">
+                      {h.clinicalObservations}
+                    </p>
+                  )}
                   <p className="text-xs text-slate-500">
                     {h.zone} · Tipo: {h.lesionType} · Fase:{' '}
                     <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${PHASE_STYLE[h.phase]}`}>
@@ -547,9 +627,11 @@ export function PatientDetailPage({ patientId: patientIdProp, embedded = false }
                   </p>
                 </div>
                 <div className="flex items-center justify-between gap-3 sm:block sm:text-right">
-                  <p className="font-semibold text-brand-700">EVA {h.evaScore}/10</p>
+                  {h.evaScore != null && (
+                    <p className="font-semibold text-brand-700">EVA {h.evaScore}/10</p>
+                  )}
                   <p className="text-xs text-slate-400">
-                    {new Date(h.createdAt).toLocaleString('es-ES')}
+                    {formatClinicDateTime(h.createdAt).replace('T', ' ')}
                   </p>
                 </div>
                 {(h.bloodPressureSystolic ||
@@ -568,6 +650,9 @@ export function PatientDetailPage({ patientId: patientIdProp, embedded = false }
                     {h.oxygenSaturation != null ? `SpO₂ ${h.oxygenSaturation}% · ` : ''}
                     {h.temperatureCelsius != null ? `Temp. ${h.temperatureCelsius} °C · ` : ''}
                     {h.heartRate ? `FC ${h.heartRate} lpm · ` : ''}
+                    {h.vitalsMeasuredAt
+                      ? `Medición: ${formatClinicDateTime(h.vitalsMeasuredAt).replace('T', ' ')} · `
+                      : ''}
                     {h.sleepHours
                       ? `Sueño: ${
                           {
@@ -618,6 +703,15 @@ export function PatientDetailPage({ patientId: patientIdProp, embedded = false }
               </li>
             ))}
           </ul>
+        )}
+        {!isLoading && histories.length > 0 && (
+          <Pagination
+            page={historyPagination.page}
+            pageSize={historyPagination.pageSize}
+            totalItems={histories.length}
+            onPageChange={historyPagination.setPage}
+            onPageSizeChange={historyPagination.setPageSize}
+          />
         )}
       </div>
     </div>

@@ -5,6 +5,7 @@ export function rowToIntervention(row) {
   return new TreatmentIntervention({
     id: row.id,
     clinicalEvaluationId: row.clinical_evaluation_id,
+    catalogItemId: row.catalog_item_id,
     kind: row.kind,
     name: row.name,
     contraction: row.contraction,
@@ -31,6 +32,7 @@ export function interventionToRow(intervention) {
   const item = intervention.toPrimitives();
   return {
     clinical_evaluation_id: item.clinicalEvaluationId,
+    catalog_item_id: item.catalogItemId,
     kind: item.kind,
     name: item.name,
     contraction: item.contraction,

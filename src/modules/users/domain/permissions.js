@@ -13,7 +13,9 @@ export const PERMISSIONS = Object.freeze({
   agenda: [ROLES.ADMIN, ROLES.TERAPEUTA, ROLES.ASISTENTE],
   users: [ROLES.ADMIN],
   audit: [ROLES.ADMIN],
-  catalogs: [ROLES.ADMIN],
+  catalogs: [ROLES.ADMIN, ROLES.TERAPEUTA],
+  catalogManagement: [ROLES.ADMIN],
+  catalogExerciseCreate: [ROLES.ADMIN, ROLES.TERAPEUTA],
 });
 
 export function can(role, permission) {

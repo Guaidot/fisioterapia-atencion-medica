@@ -76,6 +76,35 @@ describe('TreatmentIntervention', () => {
       mode: 'pulsado',
     });
   });
+
+  it('allows an agent intervention without parameters when the catalog has none configured', () => {
+    const intervention = new TreatmentIntervention({
+      clinicalEvaluationId: 'evaluation-1',
+      catalogItemId: 'catalog-1',
+      kind: 'physical_agent',
+      name: 'Crioterapia',
+      parameterConfig: { fields: [], intensityUnits: [] },
+    });
+
+    expect(intervention.toPrimitives()).toMatchObject({
+      catalogItemId: 'catalog-1',
+      applicationMinutes: null,
+    });
+  });
+
+  it('rejects an agent parameter that is not enabled by its catalog', () => {
+    expect(
+      () =>
+        new TreatmentIntervention({
+          clinicalEvaluationId: 'evaluation-1',
+          catalogItemId: 'catalog-1',
+          kind: 'physical_agent',
+          name: 'Crioterapia',
+          applicationMinutes: 10,
+          parameterConfig: { fields: [], intensityUnits: [] },
+        }),
+    ).toThrow('El catálogo no habilita el parámetro applicationMinutes.');
+  });
 });
 
 describe('RomMeasurement', () => {
