@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useEvaluationTreatment } from '../hooks/useTreatment.js';
 import { useContainer } from '../../../../app/container.jsx';
 import {
@@ -8,6 +8,8 @@ import {
 import { useTreatmentCatalog } from '../hooks/useTreatmentCatalog.js';
 import { Pagination } from '../../../../shared/ui/components/Pagination.jsx';
 import { usePagination } from '../../../../shared/ui/hooks/usePagination.js';
+import { ExerciseIllustrationCarousel } from './ExerciseIllustrationCarousel.jsx';
+import { useConfirmHomeExercisePlanReview } from '../../../reports/ui/hooks/useHomeExercisePlanReview.js';
 
 const EMPTY_INTERVENTION = {
   kind: 'exercise',
@@ -140,9 +142,13 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
   const [interventionError, setInterventionError] = useState('');
   const [measurementError, setMeasurementError] = useState('');
   const [reportError, setReportError] = useState('');
+  const [reviewError, setReviewError] = useState('');
   const [reportReady, setReportReady] = useState(false);
+  const [reviewConfirmed, setReviewConfirmed] = useState(false);
   const container = useContainer();
-  const reportUseCase = container.getReportUseCases().generateHomeExercisePlan;
+  const reportUseCases = container.getReportUseCases();
+  const reportUseCase = reportUseCases.generateHomeExercisePlan;
+  const confirmReview = useConfirmHomeExercisePlanReview(patient.id);
   const selectedIllustration = getExerciseIllustration(interventionForm.illustrationKey);
   const catalogQuery = useTreatmentCatalog({ kind: interventionForm.kind });
   const selectedCatalogItem = catalogQuery.data?.find(
@@ -155,6 +161,10 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
     createIntervention,
     createMeasurement,
   } = useEvaluationTreatment(clinicalEvaluationId);
+  useEffect(() => {
+    setReportReady(false);
+    setReviewConfirmed(false);
+  }, [interventions.data]);
 
   async function submitIntervention(event) {
     event.preventDefault();
@@ -192,8 +202,18 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
         interventions: interventions.data ?? [],
       });
       setReportReady(true);
+      setReviewConfirmed(false);
     } catch (error) {
       setReportError(error.message || 'No se pudo generar la pauta.');
+    }
+  }
+
+  async function submitReviewConfirmation() {
+    setReviewError('');
+    try {
+      await confirmReview.mutateAsync(clinicalEvaluationId);
+    } catch (error) {
+      setReviewError(error.message || 'No se pudo guardar la confirmación de revisión.');
     }
   }
 
@@ -290,11 +310,7 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
                   </label>
                   {selectedIllustration && (
                     <div className="sm:col-span-2 lg:col-span-3">
-                      <img
-                        className="h-32 w-full max-w-sm rounded-lg border border-slate-200 object-contain"
-                        src={selectedIllustration.imagePath}
-                        alt={`Vista previa: ${selectedIllustration.label}`}
-                      />
+                      <ExerciseIllustrationCarousel illustration={selectedIllustration} />
                       <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm sm:grid-cols-2">
                         <div>
                           <p className="font-semibold text-slate-700">Posición inicial</p>
@@ -307,14 +323,6 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
                         <div>
                           <p className="font-semibold text-slate-700">Músculos principales</p>
                           <p className="text-slate-600">{selectedIllustration.muscles}</p>
-                          <img
-                            className="mt-2 h-36 w-full max-w-xs rounded border border-slate-200 object-contain"
-                            src={selectedIllustration.muscleImagePath}
-                            alt={`Músculos trabajados: ${selectedIllustration.muscles}`}
-                            onError={(event) => {
-                              event.currentTarget.hidden = true;
-                            }}
-                          />
                         </div>
                         <div>
                           <p className="font-semibold text-slate-700">Recomendación</p>
@@ -474,8 +482,37 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
           </button>
           {reportError && <p role="alert" className="mt-2 text-sm text-red-700">{reportError}</p>}
           {reportReady && (
+            <div className="mt-3 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p role="status" className="text-sm text-emerald-700">
+                Se abrió la vista imprimible. Revisa la pauta antes de entregarla; el navegador no
+                confirma si el archivo PDF llegó a guardarse.
+              </p>
+              <label className="flex items-start gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={reviewConfirmed}
+                  onChange={(event) => setReviewConfirmed(event.target.checked)}
+                />
+                Revisé la pauta generada y confirmo que corresponde a los ejercicios indicados.
+              </label>
+              <button
+                type="button"
+                className="btn-primary min-h-11"
+                disabled={!reviewConfirmed || confirmReview.isPending}
+                onClick={submitReviewConfirmation}
+              >
+                {confirmReview.isPending ? 'Guardando revisión…' : 'Confirmar revisión profesional'}
+              </button>
+            </div>
+          )}
+          {reviewError && <p role="alert" className="mt-2 text-sm text-red-700">{reviewError}</p>}
+          {evaluation.homeExercisePlanReviewedAt && (
             <p role="status" className="mt-2 text-sm text-emerald-700">
-              Se abrió la pauta para imprimir o guardar como PDF.
+              Revisión profesional confirmada el{' '}
+              {new Date(evaluation.homeExercisePlanReviewedAt).toLocaleString('es-VE', {
+                timeZone: 'America/Caracas',
+              })}
             </p>
           )}
         </section>

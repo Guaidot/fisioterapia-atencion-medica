@@ -31,11 +31,18 @@ import {
 } from '../modules/treatment/application/usecases/TreatmentUseCases.js';
 import { GenerateHomeExercisePlanUseCase } from '../modules/reports/application/usecases/GenerateHomeExercisePlan.js';
 import { BrowserHomeExercisePlanPdfAdapter } from '../modules/reports/infrastructure/BrowserHomeExercisePlanPdfAdapter.js';
+import { ConfirmHomeExercisePlanReviewUseCase } from '../modules/reports/application/usecases/ConfirmHomeExercisePlanReview.js';
 import {
   ListTreatmentCatalogUseCase,
   SaveTreatmentCatalogItemUseCase,
 } from '../modules/treatment/application/usecases/TreatmentCatalogUseCases.js';
 import { GetDashboardOverviewUseCase } from '../modules/dashboard/application/usecases/GetDashboardOverview.js';
+import {
+  CreateAppointmentUseCase,
+  ListAppointmentsUseCase,
+  RescheduleAppointmentUseCase,
+  UpdateAppointmentStatusUseCase,
+} from '../modules/appointments/application/usecases/AppointmentUseCases.js';
 
 /**
  * Composition Root: única fuente de cableado (Singleton de la aplicación).
@@ -56,6 +63,7 @@ class AppContainer {
     this.#treatmentRepository = RepositoryFactory.create('treatment');
     this.#treatmentCatalogRepository = RepositoryFactory.create('treatmentCatalog');
     this.#dashboardRepository = RepositoryFactory.create('dashboard');
+    this.#appointmentRepository = RepositoryFactory.create('appointment');
     this.homeExercisePlanPdfPort = new BrowserHomeExercisePlanPdfAdapter();
     this.userRepository = new SupabaseUserRepository();
     this.userProvisioningPort = new SupabaseUserProvisioningAdapter();
@@ -78,6 +86,11 @@ class AppContainer {
       treatmentCatalogList: null,
       treatmentCatalogSave: null,
       dashboardOverview: null,
+      appointmentList: null,
+      appointmentCreate: null,
+      appointmentStatusUpdate: null,
+      appointmentReschedule: null,
+      homeExercisePlanReview: null,
       romList: null,
       romProgressList: null,
       romCreate: null,
@@ -100,6 +113,7 @@ class AppContainer {
   #treatmentRepository;
   #treatmentCatalogRepository;
   #dashboardRepository;
+  #appointmentRepository;
 
   static getInstance() {
     if (!AppContainer.#instance) {
@@ -197,11 +211,34 @@ class AppContainer {
     return { overview: this.useCases.dashboardOverview };
   }
 
+  getAppointmentUseCases() {
+    this.useCases.appointmentList ??= new ListAppointmentsUseCase(this.#appointmentRepository);
+    this.useCases.appointmentCreate ??= new CreateAppointmentUseCase(this.#appointmentRepository);
+    this.useCases.appointmentStatusUpdate ??= new UpdateAppointmentStatusUseCase(
+      this.#appointmentRepository,
+    );
+    this.useCases.appointmentReschedule ??= new RescheduleAppointmentUseCase(
+      this.#appointmentRepository,
+    );
+    return {
+      list: this.useCases.appointmentList,
+      create: this.useCases.appointmentCreate,
+      updateStatus: this.useCases.appointmentStatusUpdate,
+      reschedule: this.useCases.appointmentReschedule,
+    };
+  }
+
   getReportUseCases() {
     this.useCases.homeExercisePlanGenerate ??= new GenerateHomeExercisePlanUseCase(
       this.homeExercisePlanPdfPort,
     );
-    return { generateHomeExercisePlan: this.useCases.homeExercisePlanGenerate };
+    this.useCases.homeExercisePlanReview ??= new ConfirmHomeExercisePlanReviewUseCase(
+      RepositoryFactory.create('homeExercisePlanReview'),
+    );
+    return {
+      generateHomeExercisePlan: this.useCases.homeExercisePlanGenerate,
+      confirmHomeExercisePlanReview: this.useCases.homeExercisePlanReview,
+    };
   }
 
   getUserUseCases() {

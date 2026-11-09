@@ -18,7 +18,10 @@ export function useEvaluationTreatment(clinicalEvaluationId) {
   });
   const createIntervention = useMutation({
     mutationFn: (input) => useCases.createIntervention.execute(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [...key, 'interventions'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...key, 'interventions'] });
+      queryClient.invalidateQueries({ queryKey: ['clinicalHistories'] });
+    },
   });
   const createMeasurement = useMutation({
     mutationFn: (input) => useCases.createMeasurement.execute(input),

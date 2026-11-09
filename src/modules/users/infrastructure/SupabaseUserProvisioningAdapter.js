@@ -28,7 +28,9 @@ export class SupabaseUserProvisioningAdapter extends UserProvisioningPort {
   async createAccount({ email, password, fullName, role }) {
     const {
       data: { user: currentUser },
+      error: authError,
     } = await this.client.auth.getUser();
+    if (authError) throw authError;
 
     if (currentUser) {
       return invokeProvisioning(
@@ -38,25 +40,9 @@ export class SupabaseUserProvisioningAdapter extends UserProvisioningPort {
       );
     }
 
-    const { data, error } = await this.client.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-        },
-      },
-    });
-
-    if (error) {
-      throw new Error(error.message || 'No se pudo registrar el usuario.');
-    }
-
-    if (!data?.user) {
-      throw new Error('No se recibió el usuario creado.');
-    }
-
-    return data.user;
+    throw new Error(
+      'El registro público está deshabilitado. Usa la configuración inicial o solicita a un administrador que cree tu cuenta.',
+    );
   }
 
   async bootstrapFirstAdmin({ email, password, fullName, bootstrapSecret }) {

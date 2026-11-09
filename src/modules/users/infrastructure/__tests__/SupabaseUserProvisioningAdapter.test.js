@@ -9,10 +9,7 @@ describe('SupabaseUserProvisioningAdapter', () => {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
         resetPasswordForEmail: vi.fn().mockResolvedValue({ error: null }),
-        signUp: vi.fn().mockResolvedValue({
-          data: { user: { id: 'public-user-id' } },
-          error: null,
-        }),
+        signUp: vi.fn(),
       },
       functions: {
         invoke: vi.fn().mockResolvedValue({ data: { userId: 'provisioned-user-id' }, error: null }),
@@ -20,22 +17,19 @@ describe('SupabaseUserProvisioningAdapter', () => {
     };
   });
 
-  it('registra públicamente sin enviar ni asignar un rol', async () => {
+  it('rechaza el registro público cuando no hay una sesión', async () => {
     const adapter = new SupabaseUserProvisioningAdapter(client);
 
-    const user = await adapter.createAccount({
-      email: 'persona@example.com',
-      password: 'clave-segura',
-      fullName: 'Persona Nueva',
-      role: 'admin',
-    });
+    await expect(
+      adapter.createAccount({
+        email: 'persona@example.com',
+        password: 'clave-segura',
+        fullName: 'Persona Nueva',
+        role: 'admin',
+      }),
+    ).rejects.toThrow('El registro público está deshabilitado.');
 
-    expect(user.id).toBe('public-user-id');
-    expect(client.auth.signUp).toHaveBeenCalledWith({
-      email: 'persona@example.com',
-      password: 'clave-segura',
-      options: { data: { full_name: 'Persona Nueva' } },
-    });
+    expect(client.auth.signUp).not.toHaveBeenCalled();
     expect(client.functions.invoke).not.toHaveBeenCalled();
   });
 

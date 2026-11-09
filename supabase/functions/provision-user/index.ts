@@ -71,12 +71,12 @@ Deno.serve(async (request: Request) => {
 
       const { data: callerProfile, error: profileError } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, is_active')
         .eq('id', userData.user.id)
         .maybeSingle();
       if (profileError) return respond({ error: profileError.message }, 500);
-      if (callerProfile?.role !== 'admin') {
-        return respond({ error: 'Solo un administrador puede asignar roles.' }, 403);
+      if (callerProfile?.role !== 'admin' || !callerProfile.is_active) {
+        return respond({ error: 'Se requiere una cuenta de administrador activa.' }, 403);
       }
 
       if (!['admin', 'terapeuta', 'asistente'].includes(role)) {

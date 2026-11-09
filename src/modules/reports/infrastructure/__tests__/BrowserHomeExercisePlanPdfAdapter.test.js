@@ -45,6 +45,9 @@ describe('BrowserHomeExercisePlanPdfAdapter', () => {
     expect(written.join('')).toContain('Flexión &lt;activa&gt;');
     expect(written.join('')).toContain('class="patient-card"');
     expect(written.join('')).toContain('class="dosage"');
+    expect(written.join('')).toContain('src="/images/logo_fisio.jpg"');
+    expect(written.join('')).toContain('class="brand-logo"');
+    expect(written.join('')).toContain('linear-gradient(115deg');
     expect(written.join('')).toContain('Puente de glúteos · ilustración orientativa');
     expect(written.join('')).toContain('/images/exercises/puente-de-gluteos.webp');
     expect(written.join('')).toContain('<img src="');

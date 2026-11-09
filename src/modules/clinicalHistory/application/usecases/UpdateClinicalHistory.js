@@ -39,6 +39,9 @@ export class UpdateClinicalHistoryUseCase {
     const history = new ClinicalHistory({
       ...input,
       id,
+      appointmentId: existing.appointmentId,
+      homeExercisePlanReviewedAt: existing.homeExercisePlanReviewedAt,
+      homeExercisePlanReviewedBy: existing.homeExercisePlanReviewedBy,
       vitalsMeasuredAt,
       therapistId: existing.therapistId,
       createdAt: existing.createdAt,

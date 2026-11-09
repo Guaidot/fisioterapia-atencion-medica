@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { z } from 'zod';
 import { useContainer } from '../../../app/container.jsx';
 import { TextField } from '../components/Fields.jsx';
@@ -64,7 +64,7 @@ export function LoginPage() {
           Iniciar sesión
         </h1>
         <p className="mb-7 text-center text-sm text-slate-500">
-          Accede a tu espacio de gestión clínica.
+          Accede a tu espacio de registro de prácticas.
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <TextField
@@ -86,13 +86,6 @@ export function LoginPage() {
           <button type="submit" className="btn-primary min-h-12 w-full !rounded-xl shadow-sm shadow-brand-900/10" disabled={loading}>
             {loading ? 'Ingresando…' : 'Ingresar'}
           </button>
-
-          <p className="pt-1 text-center text-sm text-slate-500">
-            No tienes cuenta?{' '}
-            <Link to="/register" className="font-medium text-brand-600 hover:text-brand-700">
-              Regístrate aquí
-            </Link>
-          </p>
         </form>
       </div>
     </div>

@@ -22,6 +22,7 @@ export function useCreateClinicalHistory() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['clinicalHistories', variables.patientId] });
       queryClient.invalidateQueries({ queryKey: ['dashboardOverview'] });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
     },
   });
 }
@@ -36,6 +37,7 @@ export function useUpdateClinicalHistory() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['clinicalHistories', variables.patientId] });
       queryClient.invalidateQueries({ queryKey: ['dashboardOverview'] });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
     },
   });
 }

@@ -10,6 +10,7 @@ import { useMyProfile } from '../../../users/ui/hooks/useUsers.js';
 import { useSaveTreatmentCatalogItem, useTreatmentCatalog } from '../hooks/useTreatmentCatalog.js';
 import { Pagination } from '../../../../shared/ui/components/Pagination.jsx';
 import { usePagination } from '../../../../shared/ui/hooks/usePagination.js';
+import { ExerciseIllustrationCarousel } from '../components/ExerciseIllustrationCarousel.jsx';
 
 const KINDS = [
   { value: 'exercise', label: 'Ejercicio' },
@@ -73,6 +74,9 @@ export function TreatmentCatalogPage() {
   const [formError, setFormError] = useState('');
   const isEditing = Boolean(form.id);
   const canSaveForm = canManage || (canCreateExercise && !isEditing);
+  const selectedIllustration = EXERCISE_ILLUSTRATIONS.find(
+    (illustration) => illustration.key === form.illustrationKey,
+  );
   const filteredItems = items.filter((item) =>
     [item.name, item.description, item.kind].some((value) =>
       String(value ?? '').toLowerCase().includes(search.trim().toLowerCase()),
@@ -187,17 +191,22 @@ export function TreatmentCatalogPage() {
         />
 
         {form.kind === 'exercise' ? (
-          <SelectField
-            label="Recurso visual (opcional)"
-            value={form.illustrationKey}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, illustrationKey: event.target.value }))
-            }
-            options={[
-              { value: '', label: 'Sin ilustración' },
-              ...EXERCISE_ILLUSTRATIONS.map(({ key, label }) => ({ value: key, label })),
-            ]}
-          />
+          <>
+            <SelectField
+              label="Recurso visual (opcional)"
+              value={form.illustrationKey}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, illustrationKey: event.target.value }))
+              }
+              options={[
+                { value: '', label: 'Sin ilustración' },
+                ...EXERCISE_ILLUSTRATIONS.map(({ key, label }) => ({ value: key, label })),
+              ]}
+            />
+            {selectedIllustration && (
+              <ExerciseIllustrationCarousel illustration={selectedIllustration} />
+            )}
+          </>
         ) : (
           <div className="space-y-3 rounded-lg border border-slate-200 p-3">
             <fieldset>

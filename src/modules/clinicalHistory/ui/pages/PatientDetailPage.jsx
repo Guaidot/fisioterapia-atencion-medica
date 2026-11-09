@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { usePatients } from '../../../patients/ui/hooks/usePatients.js';
 import {
   useClinicalHistories,
@@ -15,6 +15,11 @@ import {
 } from '../../domain/entities/ClinicalHistory.js';
 import { EvaluationTreatmentPanel } from '../../../treatment/ui/components/EvaluationTreatmentPanel.jsx';
 import { RomProgressSummary } from '../../../treatment/ui/components/RomProgressSummary.jsx';
+import { EvaProgressChart } from '../components/EvaProgressChart.jsx';
+import { PatientAppointmentsSummary } from '../components/PatientAppointmentsSummary.jsx';
+import { useAppointments } from '../../../appointments/ui/hooks/useAppointments.js';
+import { useMyProfile } from '../../../users/ui/hooks/useUsers.js';
+import { can } from '../../../users/domain/permissions.js';
 import {
   clinicDateTimeToIso,
   currentClinicDateTime,
@@ -234,6 +239,11 @@ export function PatientDetailPage({ patientId: patientIdProp, embedded = false }
   const { id } = useParams();
   const patientId = patientIdProp ?? id;
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const appointmentId = searchParams.get('appointmentId');
+  const { data: currentProfile } = useMyProfile();
+  const agendaAccess = can(currentProfile?.role, 'agenda');
+  const appointmentsQuery = useAppointments(agendaAccess);
   const { data: patients = [] } = usePatients();
   const patient = patients.find((p) => p.id === patientId);
 
@@ -277,7 +287,24 @@ export function PatientDetailPage({ patientId: patientIdProp, embedded = false }
     setEditingHistoryId(null);
     setForm({ ...EMPTY_FORM });
     setErrors({});
+    if (searchParams.has('appointmentId')) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('appointmentId');
+      nextParams.delete('newEvaluation');
+      setSearchParams(nextParams, { replace: true });
+    }
   }
+
+  useEffect(() => {
+    if (searchParams.get('newEvaluation') !== '1' || !patient || showForm) return;
+    setEditingHistoryId(null);
+    setForm({ ...EMPTY_FORM, vitalsMeasuredAt: currentClinicDateTime() });
+    setErrors({});
+    setShowForm(true);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('newEvaluation');
+    setSearchParams(nextParams, { replace: true });
+  }, [patient, searchParams, setSearchParams, showForm]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -320,6 +347,7 @@ export function PatientDetailPage({ patientId: patientIdProp, embedded = false }
         sleepHours: parsed.data.sleepHours || null,
         sleepQuality: parsed.data.sleepQuality || null,
         patientId,
+        appointmentId: editingHistoryId ? existingEvaluation?.appointmentId : appointmentId,
       };
       if (editingHistoryId) {
         await updateHistory.mutateAsync({ ...input, id: editingHistoryId });
@@ -348,6 +376,19 @@ export function PatientDetailPage({ patientId: patientIdProp, embedded = false }
         >
           ← Volver a pacientes
         </button>
+      )}
+      {agendaAccess && (
+        <PatientAppointmentsSummary
+          appointmentsQuery={{
+            ...appointmentsQuery,
+            data: (appointmentsQuery.data ?? []).filter(
+              (appointment) => appointment.patientId === patientId,
+            ),
+          }}
+          onSchedule={() =>
+            navigate(`/agenda?patientId=${encodeURIComponent(patientId)}`)
+          }
+        />
       )}
 
       <div className="page-heading !mb-0">
@@ -594,6 +635,7 @@ export function PatientDetailPage({ patientId: patientIdProp, embedded = false }
       )}
 
       {histories.length > 1 && <RomProgressSummary clinicalEvaluations={histories} />}
+      <EvaProgressChart evaluations={histories} />
 
       <div className="list-panel">
         <div className="border-b border-slate-100 px-5 py-4">

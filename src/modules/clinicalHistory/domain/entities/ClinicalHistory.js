@@ -43,6 +43,9 @@ export class ClinicalHistory extends Entity {
     therapistId = null,
     createdAt = null,
     clinicalObservations = '',
+    appointmentId = null,
+    homeExercisePlanReviewedAt = null,
+    homeExercisePlanReviewedBy = null,
     vitalsMeasuredAt = null,
     bloodPressureSystolic = null,
     bloodPressureDiastolic = null,
@@ -70,6 +73,9 @@ export class ClinicalHistory extends Entity {
       throw new DomainError('Las observaciones clínicas deben ser texto y no superar 2000 caracteres.');
     }
     this.clinicalObservations = clinicalObservations.trim();
+    this.appointmentId = appointmentId;
+    this.homeExercisePlanReviewedAt = homeExercisePlanReviewedAt;
+    this.homeExercisePlanReviewedBy = homeExercisePlanReviewedBy;
     if (
       vitalsMeasuredAt != null &&
       (typeof vitalsMeasuredAt !== 'string' || !Number.isFinite(Date.parse(vitalsMeasuredAt)))
@@ -153,6 +159,9 @@ export class ClinicalHistory extends Entity {
       therapistId: this.therapistId,
       createdAt: this.createdAt,
       clinicalObservations: this.clinicalObservations,
+      appointmentId: this.appointmentId,
+      homeExercisePlanReviewedAt: this.homeExercisePlanReviewedAt,
+      homeExercisePlanReviewedBy: this.homeExercisePlanReviewedBy,
       vitalsMeasuredAt: this.vitalsMeasuredAt,
       bloodPressureSystolic: this.bloodPressureSystolic,
       bloodPressureDiastolic: this.bloodPressureDiastolic,

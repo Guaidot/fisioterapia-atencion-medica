@@ -14,7 +14,7 @@ const NAV_ITEMS = [
   { to: '/historia', label: 'Historia clínica', permission: 'clinicalHistory', enabled: false },
   { to: '/electroterapia', label: 'Electroterapia', permission: 'electrotherapy', enabled: false },
   { to: '/ejercicios', label: 'Ejercicios / Goniometría', permission: 'exercises', enabled: false },
-  { to: '/agenda', label: 'Agenda', permission: 'agenda', enabled: false },
+  { to: '/agenda', label: 'Agenda', permission: 'agenda', enabled: true },
 ];
 
 export function Layout() {

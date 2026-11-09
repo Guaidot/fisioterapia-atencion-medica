@@ -5,6 +5,8 @@ import { SupabaseAuditRepository } from '../../modules/audit/infrastructure/Supa
 import { SupabaseTreatmentRepository } from '../../modules/treatment/infrastructure/SupabaseTreatmentRepository.js';
 import { SupabaseTreatmentCatalogRepository } from '../../modules/treatment/infrastructure/SupabaseTreatmentCatalogRepository.js';
 import { SupabaseDashboardRepository } from '../../modules/dashboard/infrastructure/SupabaseDashboardRepository.js';
+import { SupabaseAppointmentRepository } from '../../modules/appointments/infrastructure/SupabaseAppointmentRepository.js';
+import { SupabaseHomeExercisePlanReviewAdapter } from '../../modules/reports/infrastructure/SupabaseHomeExercisePlanReviewAdapter.js';
 
 /**
  * Factory de repositorios (patrón Factory).
@@ -28,6 +30,10 @@ export class RepositoryFactory {
         return new SupabaseTreatmentCatalogRepository();
       case 'dashboard':
         return new SupabaseDashboardRepository();
+      case 'appointment':
+        return new SupabaseAppointmentRepository();
+      case 'homeExercisePlanReview':
+        return new SupabaseHomeExercisePlanReviewAdapter();
       default:
         throw new Error(`Repositorio desconocido: ${name}`);
     }

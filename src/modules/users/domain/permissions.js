@@ -10,7 +10,7 @@ export const PERMISSIONS = Object.freeze({
   electrotherapy: [ROLES.ADMIN, ROLES.TERAPEUTA],
   exercises: [ROLES.ADMIN, ROLES.TERAPEUTA],
   reports: [ROLES.ADMIN, ROLES.TERAPEUTA],
-  agenda: [ROLES.ADMIN, ROLES.TERAPEUTA, ROLES.ASISTENTE],
+  agenda: [ROLES.ADMIN, ROLES.TERAPEUTA],
   users: [ROLES.ADMIN],
   audit: [ROLES.ADMIN],
   catalogs: [ROLES.ADMIN, ROLES.TERAPEUTA],

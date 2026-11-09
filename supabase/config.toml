@@ -3,6 +3,7 @@ project_id = "fisioterapia"
 [auth]
 site_url = "http://localhost:5173"
 additional_redirect_urls = ["http://localhost:5173/restablecer-contrasena"]
+enable_signup = false
 
 [functions.provision-user]
 verify_jwt = false
