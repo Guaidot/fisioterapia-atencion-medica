@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { SelectField } from '../../../../shared/ui/components/Fields.jsx';
+import { z } from 'zod';
+import { SelectField, TextField } from '../../../../shared/ui/components/Fields.jsx';
 import {
+  useCreateUser,
   useMyProfile,
   useSendUserPasswordReset,
   useUpdateUserRole,
@@ -11,12 +13,28 @@ import { Pagination } from '../../../../shared/ui/components/Pagination.jsx';
 import { usePagination } from '../../../../shared/ui/hooks/usePagination.js';
 
 const ROLE_OPTIONS = ALL_ROLES.map((role) => ({ value: role, label: ROLE_LABELS[role] }));
+const createUserSchema = z.object({
+  fullName: z.string().trim().min(1, 'El nombre es obligatorio.'),
+  email: z.string().trim().email('Correo electrónico inválido.'),
+  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres.'),
+  role: z.string().refine((role) => ALL_ROLES.includes(role), 'Selecciona un rol válido.'),
+});
 
 export function UsersAdminPage() {
   const { data: users = [], isLoading, isError, error } = useUsers();
   const { data: currentUser } = useMyProfile();
+  const createUser = useCreateUser();
   const updateUserRole = useUpdateUserRole();
   const sendPasswordReset = useSendUserPasswordReset();
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    role: 'asistente',
+  });
+  const [createErrors, setCreateErrors] = useState({});
+  const [creatingUser, setCreatingUser] = useState(false);
   const [search, setSearch] = useState('');
   const [roleDrafts, setRoleDrafts] = useState({});
   const [savingUserId, setSavingUserId] = useState(null);
@@ -32,6 +50,37 @@ export function UsersAdminPage() {
     );
   });
   const pagination = usePagination(filteredUsers, search);
+
+  function setCreateField(field, value) {
+    setCreateForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function handleCreateUser(event) {
+    event.preventDefault();
+    const parsed = createUserSchema.safeParse(createForm);
+    if (!parsed.success) {
+      const fieldErrors = {};
+      for (const issue of parsed.error.issues) {
+        fieldErrors[issue.path[0]] = issue.message;
+      }
+      setCreateErrors(fieldErrors);
+      return;
+    }
+
+    setCreateErrors({});
+    setCreatingUser(true);
+    try {
+      await createUser.mutateAsync(parsed.data);
+      setCreateForm({ fullName: '', email: '', password: '', role: 'asistente' });
+      setShowCreateForm(false);
+    } catch (createError) {
+      setCreateErrors({
+        _root: createError.message || 'No se pudo crear el usuario.',
+      });
+    } finally {
+      setCreatingUser(false);
+    }
+  }
 
   async function saveRole(user) {
     const role = roleDrafts[user.id] ?? user.role;
@@ -90,13 +139,76 @@ export function UsersAdminPage() {
         <div>
           <h1 className="page-title">Gestión de usuarios</h1>
           <p className="page-description">
-            Consulta los datos de las cuentas y administra sus roles.
+            Crea cuentas y administra los roles de acceso.
           </p>
         </div>
-        <span className="inline-flex w-fit items-center rounded-full bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700">
-          {users.length} {users.length === 1 ? 'usuario' : 'usuarios'}
-        </span>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="inline-flex w-fit items-center rounded-full bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700">
+            {users.length} {users.length === 1 ? 'usuario' : 'usuarios'}
+          </span>
+          <button
+            type="button"
+            className="btn-primary min-h-11"
+            onClick={() => {
+              setShowCreateForm((visible) => !visible);
+              setCreateErrors({});
+            }}
+          >
+            {showCreateForm ? 'Cancelar' : 'Crear usuario'}
+          </button>
+        </div>
       </div>
+
+      {showCreateForm && (
+        <form onSubmit={handleCreateUser} className="card mb-5 space-y-4">
+          <h2 className="font-semibold text-slate-800">Nueva cuenta</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField
+              label="Nombre completo"
+              autoComplete="name"
+              value={createForm.fullName}
+              onChange={(event) => setCreateField('fullName', event.target.value)}
+              error={createErrors.fullName}
+              required
+            />
+            <TextField
+              label="Correo electrónico"
+              type="email"
+              autoComplete="email"
+              value={createForm.email}
+              onChange={(event) => setCreateField('email', event.target.value)}
+              error={createErrors.email}
+              required
+            />
+            <TextField
+              label="Contraseña temporal"
+              type="password"
+              autoComplete="new-password"
+              value={createForm.password}
+              onChange={(event) => setCreateField('password', event.target.value)}
+              error={createErrors.password}
+              hint="Mínimo 8 caracteres. Puedes enviarle un enlace de recuperación después."
+              required
+            />
+            <SelectField
+              label="Rol"
+              value={createForm.role}
+              onChange={(event) => setCreateField('role', event.target.value)}
+              options={ROLE_OPTIONS}
+              error={createErrors.role}
+              required
+            />
+          </div>
+          {createErrors._root && (
+            <p role="alert" className="text-sm text-red-600">
+              {createErrors._root}
+            </p>
+          )}
+          <button type="submit" className="btn-primary min-h-11" disabled={creatingUser}>
+            {creatingUser ? 'Creando…' : 'Crear cuenta'}
+          </button>
+        </form>
+      )}
 
       <div className="mb-5">
         <label className="sr-only" htmlFor="user-search">
@@ -116,7 +228,7 @@ export function UsersAdminPage() {
         <div className="card px-4 py-8 text-center">
           <p className="font-medium text-slate-700">Todavía no hay usuarios registrados.</p>
           <p className="mt-1 text-sm text-slate-500">
-            Los usuarios pueden crear su cuenta desde la pantalla de registro.
+            Usa “Crear usuario” para agregar la primera cuenta.
           </p>
         </div>
       ) : filteredUsers.length === 0 ? (

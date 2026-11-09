@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { z } from 'zod';
 import { useContainer } from '../../../app/container.jsx';
 import { TextField } from '../components/Fields.jsx';
@@ -82,6 +82,14 @@ export function LoginPage() {
             error={errors.password}
             hint="Mínimo 8 caracteres."
           />
+          <div className="-mt-2 text-right">
+            <Link
+              to="/recuperar-contrasena"
+              className="text-sm font-medium text-brand-600 hover:text-brand-700"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button type="submit" className="btn-primary min-h-12 w-full !rounded-xl shadow-sm shadow-brand-900/10" disabled={loading}>
             {loading ? 'Ingresando…' : 'Ingresar'}

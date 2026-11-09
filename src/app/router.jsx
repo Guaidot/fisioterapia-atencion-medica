@@ -11,6 +11,7 @@ import { UsersAdminPage } from '../modules/users/ui/pages/UsersAdminPage.jsx';
 import { BootstrapAdminPage } from '../modules/users/ui/pages/BootstrapAdminPage.jsx';
 import { AuditLogPage } from '../modules/audit/ui/pages/AuditLogPage.jsx';
 import { ResetPasswordPage } from '../shared/ui/pages/ResetPasswordPage.jsx';
+import { RequestPasswordResetPage } from '../shared/ui/pages/RequestPasswordResetPage.jsx';
 import { TreatmentCatalogPage } from '../modules/treatment/ui/pages/TreatmentCatalogPage.jsx';
 import { allowedRoles } from '../modules/users/domain/permissions.js';
 import { ROLES } from '../modules/users/domain/entities/Role.js';
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage />, errorElement: <ErrorBoundary /> },
   { path: '/setup', element: <BootstrapAdminPage />, errorElement: <ErrorBoundary /> },
   { path: '/restablecer-contrasena', element: <ResetPasswordPage />, errorElement: <ErrorBoundary /> },
+  { path: '/recuperar-contrasena', element: <RequestPasswordResetPage />, errorElement: <ErrorBoundary /> },
   {
     path: '/',
     element: (
