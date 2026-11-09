@@ -1,3 +1,5 @@
+import { SelectField } from './Fields.jsx';
+
 export function Pagination({
   page,
   pageSize,
@@ -18,19 +20,19 @@ export function Pagination({
       </span>
       {totalItems > pageSize && (
         <div className="flex items-center justify-between gap-3 text-xs text-slate-500 sm:justify-start sm:text-sm">
-          <label className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <span>Por página</span>
-            <select
-              className="input !w-auto !py-1.5 text-xs sm:text-sm"
+            <SelectField
+              className="!w-auto !py-1.5 text-xs sm:text-sm"
               aria-label="Elementos por página"
               value={pageSize}
               onChange={(event) => onPageSizeChange(Number(event.target.value))}
-            >
-              {[10, 25, 50].map((size) => (
-                <option key={size} value={size}>{size}</option>
-              ))}
-            </select>
-          </label>
+              options={[10, 25, 50].map((size) => ({
+                value: size,
+                label: size,
+              }))}
+            />
+          </div>
           <nav aria-label="Paginación" className="flex items-center justify-center gap-1">
             <button
               type="button"

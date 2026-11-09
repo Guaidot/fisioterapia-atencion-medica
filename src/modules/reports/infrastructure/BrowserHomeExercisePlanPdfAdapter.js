@@ -148,6 +148,7 @@ export class BrowserHomeExercisePlanPdfAdapter extends HomeExercisePlanPdfPort {
             .signature { padding-top: 9px; border-top: 1px solid #84969b; color: var(--muted); font-size: 10px; }
             footer { display: flex; justify-content: space-between; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line); color: #7b8b90; font-size: 10px; }
             .print-button { display: block; margin: 0 auto 24px; padding: 11px 20px; border: 0; border-radius: 8px; background: #087e80; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+            .print-instructions { margin: 0 auto 14px; color: var(--muted); text-align: center; }
             @page { size: A4; margin: 15mm; }
             @media (max-width: 640px) {
               main { margin: 0; padding: 20px 16px; }
@@ -163,6 +164,7 @@ export class BrowserHomeExercisePlanPdfAdapter extends HomeExercisePlanPdfPort {
               body { background: #fff; font-size: 12px; }
               main { max-width: none; min-height: 0; margin: 0; padding: 0; box-shadow: none; }
               .print-button { display: none; }
+              .print-instructions { display: none; }
               .hero, .patient-card, .exercise, .note { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
               .hero { padding-top: 21px; }
               .patient-card, .exercise, .note { break-inside: avoid; page-break-inside: avoid; }
@@ -174,6 +176,7 @@ export class BrowserHomeExercisePlanPdfAdapter extends HomeExercisePlanPdfPort {
           </style>
         </head>
         <body>
+          <p class="print-instructions">Para crear el PDF, pulsa el botón y elige “Guardar como PDF”.</p>
           <button class="print-button" type="button" onclick="window.print()">Imprimir o guardar como PDF</button>
           <main>
             <header class="topline">
@@ -237,7 +240,6 @@ export class BrowserHomeExercisePlanPdfAdapter extends HomeExercisePlanPdfPort {
       </html>`);
     printWindow.document.close();
     printWindow.focus();
-    printWindow.setTimeout(() => printWindow.print(), 250);
     return true;
   }
 }

@@ -4,6 +4,7 @@ import { BrowserHomeExercisePlanPdfAdapter } from '../BrowserHomeExercisePlanPdf
 describe('BrowserHomeExercisePlanPdfAdapter', () => {
   it('escapes report values before writing them into the print document', () => {
     const written = [];
+    const print = vi.fn();
     const printWindow = {
       document: {
         open() {},
@@ -16,7 +17,7 @@ describe('BrowserHomeExercisePlanPdfAdapter', () => {
       setTimeout(callback) {
         callback();
       },
-      print() {},
+      print,
     };
     vi.stubGlobal('window', { open: () => printWindow });
 
@@ -56,9 +57,11 @@ describe('BrowserHomeExercisePlanPdfAdapter', () => {
     expect(written.join('')).toContain('Glúteo mayor e isquiotibiales');
     expect(written.join('')).toContain('/images/muscles/puente-de-gluteos-sin-apoyo-muscle.png');
     expect(written.join('')).toContain('Imprimir o guardar como PDF');
+    expect(written.join('')).toContain('elige “Guardar como PDF”');
     expect(written.join('')).toContain('@page { size: A4;');
     expect(written.join('')).toContain('Firma del paciente');
     expect(written.join('')).not.toContain('<img src=x onerror=alert(1)>');
+    expect(print).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 

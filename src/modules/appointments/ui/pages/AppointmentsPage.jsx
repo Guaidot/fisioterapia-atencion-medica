@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { usePatients } from '../../../patients/ui/hooks/usePatients.js';
 import { useAppointments, useAppointmentActions } from '../hooks/useAppointments.js';
 import { clinicDateTimeToIso } from '../../../../shared/ui/clinicDateTime.js';
+import { SelectField } from '../../../../shared/ui/components/Fields.jsx';
 
 const STATUS_LABELS = {
   scheduled: 'Programada',
@@ -150,22 +151,19 @@ export function AppointmentsPage() {
         ) : (
           <>
             <div className="grid gap-3 sm:grid-cols-3">
-              <label className="block text-sm text-slate-700">
-                <span className="label">Paciente</span>
-                <select
-                  className="input min-h-11"
-                  required
-                  value={form.patientId}
-                  onChange={(event) => setForm({ ...form, patientId: event.target.value })}
-                >
-                  <option value="">Selecciona un paciente</option>
-                  {patientsQuery.data.map((patient) => (
-                    <option key={patient.id} value={patient.id}>
-                      {patient.fullName} · {patient.cedula}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <SelectField
+                label="Paciente"
+                required
+                value={form.patientId}
+                onChange={(event) => setForm({ ...form, patientId: event.target.value })}
+                options={[
+                  { value: '', label: 'Selecciona un paciente', disabled: true },
+                  ...patientsQuery.data.map((patient) => ({
+                    value: patient.id,
+                    label: `${patient.fullName} · ${patient.cedula}`,
+                  })),
+                ]}
+              />
               <label className="block text-sm text-slate-700">
                 <span className="label">Fecha y hora (Caracas)</span>
                 <input
@@ -204,18 +202,13 @@ export function AppointmentsPage() {
               Las fechas se muestran en la zona horaria de Caracas.
             </p>
           </div>
-          <label className="text-sm text-slate-700">
-            <span className="sr-only">Filtrar citas por estado</span>
-            <select
-              className="input min-h-11 sm:min-w-48"
-              value={filter}
-              onChange={(event) => setFilter(event.target.value)}
-            >
-              {FILTERS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </label>
+          <SelectField
+            className="sm:min-w-48"
+            aria-label="Filtrar citas por estado"
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+            options={FILTERS}
+          />
         </div>
         {appointmentsQuery.isLoading ? (
           <p className="p-5 text-sm text-slate-500">Cargando citas…</p>

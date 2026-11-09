@@ -57,6 +57,7 @@ export function rowToRomMeasurement(row) {
     clinicalEvaluationId: row.clinical_evaluation_id,
     joint: row.joint,
     movement: row.movement,
+    measurementContext: row.measurement_context ?? null,
     side: row.side,
     degrees: Number(row.degrees),
     referenceMinDegrees: row.reference_min_degrees == null
@@ -77,6 +78,7 @@ export function romMeasurementToRow(measurement) {
     clinical_evaluation_id: item.clinicalEvaluationId,
     joint: item.joint,
     movement: item.movement,
+    measurement_context: item.measurementContext,
     side: item.side,
     degrees: item.degrees,
     reference_min_degrees: item.referenceMinDegrees,

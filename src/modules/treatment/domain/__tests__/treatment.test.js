@@ -113,6 +113,7 @@ describe('RomMeasurement', () => {
       clinicalEvaluationId: 'evaluation-1',
       joint: 'Rodilla',
       movement: 'Flexión',
+      measurementContext: 'active',
       side: 'derecho',
       degrees: 90,
       referenceMinDegrees: 0,
@@ -121,6 +122,7 @@ describe('RomMeasurement', () => {
     expect(measurement.toPrimitives()).toMatchObject({
       joint: 'Rodilla',
       movement: 'Flexión',
+      measurementContext: 'active',
       side: 'derecho',
       degrees: 90,
       referenceMaxDegrees: 135,
@@ -149,6 +151,19 @@ describe('RomMeasurement', () => {
           referenceMaxDegrees: 100,
         }),
     ).toThrow('El rango de referencia mínimo no puede superar al máximo.');
+  });
+
+  it('rejects an unsupported measurement context', () => {
+    expect(
+      () =>
+        new RomMeasurement({
+          clinicalEvaluationId: 'evaluation-1',
+          joint: 'Hombro',
+          movement: 'Flexión',
+          measurementContext: 'unknown',
+          degrees: 90,
+        }),
+    ).toThrow('El contexto de medición no es válido.');
   });
 
   it('does not permit unvalidated negative range references', () => {

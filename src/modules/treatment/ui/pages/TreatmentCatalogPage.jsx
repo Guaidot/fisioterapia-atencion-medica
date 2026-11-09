@@ -10,7 +10,7 @@ import { useMyProfile } from '../../../users/ui/hooks/useUsers.js';
 import { useSaveTreatmentCatalogItem, useTreatmentCatalog } from '../hooks/useTreatmentCatalog.js';
 import { Pagination } from '../../../../shared/ui/components/Pagination.jsx';
 import { usePagination } from '../../../../shared/ui/hooks/usePagination.js';
-import { ExerciseIllustrationCarousel } from '../components/ExerciseIllustrationCarousel.jsx';
+import { ExerciseIllustrationGallery } from '../components/ExerciseIllustrationGallery.jsx';
 
 const KINDS = [
   { value: 'exercise', label: 'Ejercicio' },
@@ -204,7 +204,7 @@ export function TreatmentCatalogPage() {
               ]}
             />
             {selectedIllustration && (
-              <ExerciseIllustrationCarousel illustration={selectedIllustration} />
+              <ExerciseIllustrationGallery illustration={selectedIllustration} />
             )}
           </>
         ) : (

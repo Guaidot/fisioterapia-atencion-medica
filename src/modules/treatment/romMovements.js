@@ -1,0 +1,36 @@
+export const ROM_MOVEMENTS = [
+  { joint: 'Hombro', movement: 'Flexión' },
+  { joint: 'Hombro', movement: 'Extensión' },
+  { joint: 'Hombro', movement: 'Rotación interna' },
+  { joint: 'Hombro', movement: 'Rotación externa' },
+  { joint: 'Hombro', movement: 'Abducción' },
+  { joint: 'Hombro', movement: 'Aducción' },
+  { joint: 'Codo', movement: 'Flexión' },
+  { joint: 'Codo', movement: 'Extensión' },
+  { joint: 'Antebrazo', movement: 'Pronación' },
+  { joint: 'Antebrazo', movement: 'Supinación' },
+  { joint: 'Muñeca', movement: 'Flexión' },
+  { joint: 'Muñeca', movement: 'Extensión' },
+  { joint: 'Muñeca', movement: 'Desviación radial' },
+  { joint: 'Muñeca', movement: 'Desviación cubital' },
+  { joint: 'Cadera', movement: 'Flexión' },
+  { joint: 'Cadera', movement: 'Extensión' },
+  { joint: 'Cadera', movement: 'Abducción' },
+  { joint: 'Cadera', movement: 'Aducción' },
+  { joint: 'Cadera', movement: 'Rotación interna' },
+  { joint: 'Cadera', movement: 'Rotación externa' },
+  { joint: 'Rodilla', movement: 'Flexión' },
+  { joint: 'Rodilla', movement: 'Extensión' },
+  { joint: 'Tobillo', movement: 'Dorsiflexión' },
+  { joint: 'Tobillo', movement: 'Flexión plantar' },
+  { joint: 'Tobillo', movement: 'Inversión' },
+  { joint: 'Tobillo', movement: 'Eversión' },
+  { joint: 'Cuello', movement: 'Flexión' },
+  { joint: 'Cuello', movement: 'Extensión' },
+  { joint: 'Cuello', movement: 'Rotación derecha' },
+  { joint: 'Cuello', movement: 'Rotación izquierda' },
+];
+
+export function romMovementLabel({ joint, movement }) {
+  return `${joint} (${movement})`;
+}

@@ -1,4 +1,5 @@
 import { usePatientRomProgress } from '../hooks/useTreatment.js';
+import { ROM_MEASUREMENT_CONTEXT_LABELS } from '../../domain/entities/RomMeasurement.js';
 
 function comparisonRows(measurements) {
   const grouped = new Map();
@@ -6,6 +7,7 @@ function comparisonRows(measurements) {
     const key = [
       measurement.joint.toLowerCase(),
       measurement.movement.toLowerCase(),
+      measurement.measurementContext ?? '',
       measurement.side ?? '',
     ].join('|');
     const previous = grouped.get(key) ?? [];
@@ -57,11 +59,14 @@ export function RomProgressSummary({ clinicalEvaluations }) {
       <ul className="divide-y divide-slate-100">
         {comparisons.map(({ prior, latest, difference }) => (
           <li
-            key={`${latest.joint}:${latest.movement}:${latest.side ?? ''}`}
+            key={`${latest.joint}:${latest.movement}:${latest.measurementContext ?? ''}:${latest.side ?? ''}`}
             className="flex flex-col gap-1 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
           >
             <p className="font-medium text-slate-800">
               {latest.joint} · {latest.movement}
+              {latest.measurementContext
+                ? ` · ${ROM_MEASUREMENT_CONTEXT_LABELS[latest.measurementContext]}`
+                : ''}
               {latest.side ? ` (${latest.side})` : ''}
             </p>
             <p className="text-slate-600">

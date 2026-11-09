@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useEvaluationTreatment } from '../hooks/useTreatment.js';
 import { useContainer } from '../../../../app/container.jsx';
+import { SelectField } from '../../../../shared/ui/components/Fields.jsx';
 import {
   EXERCISE_ILLUSTRATIONS,
   getExerciseIllustration,
@@ -8,8 +9,14 @@ import {
 import { useTreatmentCatalog } from '../hooks/useTreatmentCatalog.js';
 import { Pagination } from '../../../../shared/ui/components/Pagination.jsx';
 import { usePagination } from '../../../../shared/ui/hooks/usePagination.js';
-import { ExerciseIllustrationCarousel } from './ExerciseIllustrationCarousel.jsx';
+import { ExerciseIllustrationGallery } from './ExerciseIllustrationGallery.jsx';
+import { RomMovementImage } from './RomMovementImage.jsx';
 import { useConfirmHomeExercisePlanReview } from '../../../reports/ui/hooks/useHomeExercisePlanReview.js';
+import { ROM_MOVEMENTS, romMovementLabel } from '../../romMovements.js';
+import {
+  ROM_MEASUREMENT_CONTEXTS,
+  ROM_MEASUREMENT_CONTEXT_LABELS,
+} from '../../domain/entities/RomMeasurement.js';
 
 const EMPTY_INTERVENTION = {
   kind: 'exercise',
@@ -31,8 +38,10 @@ const EMPTY_INTERVENTION = {
 };
 
 const EMPTY_MEASUREMENT = {
+  movementKey: '',
   joint: '',
   movement: '',
+  measurementContext: '',
   side: '',
   degrees: '',
   referenceMinDegrees: '',
@@ -87,6 +96,7 @@ function measurementPayload(form, clinicalEvaluationId) {
     clinicalEvaluationId,
     joint: form.joint,
     movement: form.movement,
+    measurementContext: form.measurementContext,
     side: form.side || null,
     degrees: Number(form.degrees),
     referenceMinDegrees: optionalNumber(form.referenceMinDegrees),
@@ -227,26 +237,23 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
           <h3 className="font-semibold text-slate-800">Intervenciones terapéuticas</h3>
           <form onSubmit={submitIntervention} className="space-y-3 rounded-xl bg-slate-50 p-4">
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="block text-sm text-slate-700">
-                <span className="label">Tipo</span>
-                <select
-                  className="input min-h-11"
-                  value={interventionForm.kind}
-                  onChange={(event) =>
-                    setInterventionForm({
-                      ...EMPTY_INTERVENTION,
-                      kind: event.target.value,
-                    })
-                  }
-                >
-                  <option value="exercise">Ejercicio terapéutico</option>
-                  <option value="physical_agent">Agente físico</option>
-                </select>
-              </label>
-              <label className="block text-sm text-slate-700">
-                <span className="label">Seleccionar del catálogo (opcional)</span>
-                <select
-                  className="input min-h-11"
+              <SelectField
+                label="Tipo"
+                value={interventionForm.kind}
+                onChange={(event) =>
+                  setInterventionForm({
+                    ...EMPTY_INTERVENTION,
+                    kind: event.target.value,
+                  })
+                }
+                options={[
+                  { value: 'exercise', label: 'Ejercicio terapéutico' },
+                  { value: 'physical_agent', label: 'Agente físico' },
+                ]}
+              />
+              <div>
+                <SelectField
+                  label="Seleccionar del catálogo (opcional)"
                   value={interventionForm.catalogItemId}
                   onChange={(event) => {
                     const item = catalogQuery.data?.find((entry) => entry.id === event.target.value);
@@ -258,18 +265,20 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
                       intensityUnit: '',
                     });
                   }}
-                >
-                  <option value="">Registro manual</option>
-                  {(catalogQuery.data ?? []).map((item) => (
-                    <option key={item.id} value={item.id}>{item.name}</option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: 'Registro manual' },
+                    ...(catalogQuery.data ?? []).map((item) => ({
+                      value: item.id,
+                      label: item.name,
+                    })),
+                  ]}
+                />
                 {catalogQuery.isError && (
                   <span role="alert" className="mt-1 block text-xs text-red-700">
                     No se pudo cargar el catálogo: {catalogQuery.error.message}. Puedes continuar con registro manual.
                   </span>
                 )}
-              </label>
+              </div>
               <TextInput
                 label={interventionForm.kind === 'exercise' ? 'Ejercicio' : 'Equipo o agente'}
                 required
@@ -286,8 +295,7 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   <label className="block text-sm text-slate-700 sm:col-span-2 lg:col-span-3">
                     <span className="label">Ilustración para la pauta (opcional)</span>
-                    <select
-                      className="input min-h-11"
+                    <SelectField
                       value={interventionForm.illustrationKey}
                       disabled={Boolean(selectedCatalogItem)}
                       onChange={(event) =>
@@ -296,21 +304,21 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
                           illustrationKey: event.target.value,
                         })
                       }
-                    >
-                      <option value="">Sin ilustración</option>
-                      {EXERCISE_ILLUSTRATIONS.map((illustration) => (
-                        <option key={illustration.key} value={illustration.key}>
-                          {illustration.label}
-                        </option>
-                      ))}
-                    </select>
+                      options={[
+                        { value: '', label: 'Sin ilustración' },
+                        ...EXERCISE_ILLUSTRATIONS.map((illustration) => ({
+                          value: illustration.key,
+                          label: illustration.label,
+                        })),
+                      ]}
+                    />
                     <span className="mt-1 block text-xs text-slate-500">
                       Elige solo una ilustración que corresponda al ejercicio indicado.
                     </span>
                   </label>
                   {selectedIllustration && (
                     <div className="sm:col-span-2 lg:col-span-3">
-                      <ExerciseIllustrationCarousel illustration={selectedIllustration} />
+                      <ExerciseIllustrationGallery illustration={selectedIllustration} />
                       <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm sm:grid-cols-2">
                         <div>
                           <p className="font-semibold text-slate-700">Posición inicial</p>
@@ -331,24 +339,22 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
                       </div>
                     </div>
                   )}
-                  <label className="block text-sm text-slate-700">
-                    <span className="label">Tipo de contracción</span>
-                    <select
-                      className="input min-h-11"
-                      value={interventionForm.contraction}
-                      onChange={(event) =>
-                        setInterventionForm({
-                          ...interventionForm,
-                          contraction: event.target.value,
-                        })
-                      }
-                    >
-                      <option value="">No especificada</option>
-                      <option value="isometrica">Isométrica</option>
-                      <option value="concentrica">Concéntrica</option>
-                      <option value="excentrica">Excéntrica</option>
-                    </select>
-                  </label>
+                  <SelectField
+                    label="Tipo de contracción"
+                    value={interventionForm.contraction}
+                    onChange={(event) =>
+                      setInterventionForm({
+                        ...interventionForm,
+                        contraction: event.target.value,
+                      })
+                    }
+                    options={[
+                      { value: '', label: 'No especificada' },
+                      { value: 'isometrica', label: 'Isométrica' },
+                      { value: 'concentrica', label: 'Concéntrica' },
+                      { value: 'excentrica', label: 'Excéntrica' },
+                    ]}
+                  />
                   <NumberInput label="Series" min="1" value={interventionForm.sets} onChange={(e) => setInterventionForm({ ...interventionForm, sets: e.target.value })} />
                   <NumberInput label="Repeticiones" min="1" value={interventionForm.repetitions} onChange={(e) => setInterventionForm({ ...interventionForm, repetitions: e.target.value })} />
                   <NumberInput label="Duración (segundos)" min="1" value={interventionForm.durationSeconds} onChange={(e) => setInterventionForm({ ...interventionForm, durationSeconds: e.target.value })} />
@@ -371,36 +377,33 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
                     <NumberInput label="Intensidad" step="0.01" value={interventionForm.intensity} onChange={(e) => setInterventionForm({ ...interventionForm, intensity: e.target.value })} />
                   )}
                   {(!selectedCatalogItem || configuredAgentFields.includes('intensity')) && (
-                    <label className="block text-sm text-slate-700">
-                      <span className="label">Unidad de intensidad</span>
-                      <select
-                        className="input min-h-11"
-                        value={interventionForm.intensityUnit}
-                        onChange={(event) => setInterventionForm({ ...interventionForm, intensityUnit: event.target.value })}
-                      >
-                        <option value="">No indicada</option>
-                        {(selectedCatalogItem?.parameterConfig.intensityUnits ?? ['mA', 'W', 'W/cm2']).map((unit) => (
-                          <option key={unit} value={unit}>{unit === 'W/cm2' ? 'W/cm²' : unit}</option>
-                        ))}
-                      </select>
-                    </label>
+                    <SelectField
+                      label="Unidad de intensidad"
+                      value={interventionForm.intensityUnit}
+                      onChange={(event) => setInterventionForm({ ...interventionForm, intensityUnit: event.target.value })}
+                      options={[
+                        { value: '', label: 'No indicada' },
+                        ...(selectedCatalogItem?.parameterConfig.intensityUnits ?? ['mA', 'W', 'W/cm2']).map((unit) => ({
+                          value: unit,
+                          label: unit === 'W/cm2' ? 'W/cm²' : unit,
+                        })),
+                      ]}
+                    />
                   )}
                   {(!selectedCatalogItem || configuredAgentFields.includes('applicationMinutes')) && (
                     <NumberInput label="Aplicación (minutos)" min="1" value={interventionForm.applicationMinutes} onChange={(e) => setInterventionForm({ ...interventionForm, applicationMinutes: e.target.value })} />
                   )}
                   {(!selectedCatalogItem || configuredAgentFields.includes('mode')) && (
-                    <label className="block text-sm text-slate-700">
-                      <span className="label">Modo</span>
-                      <select
-                        className="input min-h-11"
-                        value={interventionForm.mode}
-                        onChange={(event) => setInterventionForm({ ...interventionForm, mode: event.target.value })}
-                      >
-                        <option value="">No indicado</option>
-                        <option value="continuo">Continuo</option>
-                        <option value="pulsado">Pulsado</option>
-                      </select>
-                    </label>
+                    <SelectField
+                      label="Modo"
+                      value={interventionForm.mode}
+                      onChange={(event) => setInterventionForm({ ...interventionForm, mode: event.target.value })}
+                      options={[
+                        { value: '', label: 'No indicado' },
+                        { value: 'continuo', label: 'Continuo' },
+                        { value: 'pulsado', label: 'Pulsado' },
+                      ]}
+                    />
                   )}
                 </div>
                 {selectedCatalogItem && configuredAgentFields?.length > 0 && (
@@ -435,16 +438,89 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
           <h3 className="font-semibold text-slate-800">Rangos de movimiento</h3>
           <form onSubmit={submitMeasurement} className="space-y-3 rounded-xl bg-slate-50 p-4">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <TextInput label="Articulación" maxLength={100} required value={measurementForm.joint} onChange={(e) => setMeasurementForm({ ...measurementForm, joint: e.target.value })} />
-              <TextInput label="Movimiento" maxLength={100} required value={measurementForm.movement} onChange={(e) => setMeasurementForm({ ...measurementForm, movement: e.target.value })} />
+              <label className="block text-sm text-slate-700">
+                <span className="label">Articulación / movimiento</span>
+                <SelectField
+                  required
+                  value={measurementForm.movementKey}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    const selected = value === '' ? null : ROM_MOVEMENTS[Number(value)];
+                    setMeasurementForm({
+                      ...measurementForm,
+                      movementKey: value,
+                      joint: selected?.joint ?? '',
+                      movement: selected?.movement ?? '',
+                    });
+                  }}
+                  options={[
+                    { value: '', label: 'Selecciona un movimiento', disabled: true },
+                    ...ROM_MOVEMENTS.map((item, index) => ({
+                      value: String(index),
+                      label: romMovementLabel(item),
+                    })),
+                    { value: 'other', label: 'Otro (especificar)' },
+                  ]}
+                />
+              </label>
+              <RomMovementImage
+                joint={measurementForm.joint}
+                movement={measurementForm.movement}
+              />
+              {measurementForm.movementKey === 'other' && (
+                <>
+                  <TextInput
+                    label="Articulación"
+                    maxLength={100}
+                    required
+                    value={measurementForm.joint}
+                    onChange={(event) =>
+                      setMeasurementForm({ ...measurementForm, joint: event.target.value })
+                    }
+                  />
+                  <TextInput
+                    label="Movimiento"
+                    maxLength={100}
+                    required
+                    value={measurementForm.movement}
+                    onChange={(event) =>
+                      setMeasurementForm({ ...measurementForm, movement: event.target.value })
+                    }
+                  />
+                </>
+              )}
+              <label className="block text-sm text-slate-700">
+                <span className="label">Contexto de medición</span>
+                <SelectField
+                  required
+                  value={measurementForm.measurementContext}
+                  onChange={(event) =>
+                    setMeasurementForm({
+                      ...measurementForm,
+                      measurementContext: event.target.value,
+                    })
+                  }
+                  options={[
+                    { value: '', label: 'Selecciona el contexto', disabled: true },
+                    ...Object.values(ROM_MEASUREMENT_CONTEXTS).map((context) => ({
+                      value: context,
+                      label: ROM_MEASUREMENT_CONTEXT_LABELS[context],
+                    })),
+                  ]}
+                />
+              </label>
               <label className="block text-sm text-slate-700">
                 <span className="label">Lado</span>
-                <select className="input min-h-11" value={measurementForm.side} onChange={(e) => setMeasurementForm({ ...measurementForm, side: e.target.value })}>
-                  <option value="">No especificado</option>
-                  <option value="izquierdo">Izquierdo</option>
-                  <option value="derecho">Derecho</option>
-                  <option value="bilateral">Bilateral</option>
-                </select>
+                <SelectField
+                  value={measurementForm.side}
+                  onChange={(event) => setMeasurementForm({ ...measurementForm, side: event.target.value })}
+                  options={[
+                    { value: '', label: 'No especificado' },
+                    { value: 'izquierdo', label: 'Izquierdo' },
+                    { value: 'derecho', label: 'Derecho' },
+                    { value: 'bilateral', label: 'Bilateral' },
+                  ]}
+                />
               </label>
               <NumberInput label="Medición (grados)" min="0" max="360" step="0.01" required value={measurementForm.degrees} onChange={(e) => setMeasurementForm({ ...measurementForm, degrees: e.target.value })} />
               <NumberInput label="Referencia mínima (°), opcional" min="0" max="360" step="0.01" value={measurementForm.referenceMinDegrees} onChange={(e) => setMeasurementForm({ ...measurementForm, referenceMinDegrees: e.target.value })} />
@@ -456,7 +532,7 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
             </label>
             {measurementError && <p role="alert" className="text-sm text-red-700">{measurementError}</p>}
             <button type="submit" className="btn-primary min-h-11" disabled={createMeasurement.isPending}>
-              {createMeasurement.isPending ? 'Guardando…' : 'Registrar medición'}
+              {createMeasurement.isPending ? 'Guardando…' : 'Agregar rango de movimiento'}
             </button>
           </form>
           <MeasurementList query={measurements} />
@@ -465,8 +541,8 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
         <section className="border-t border-slate-200 pt-5">
           <h3 className="font-semibold text-slate-800">Pauta domiciliaria</h3>
           <p className="mt-1 text-sm text-slate-500">
-            Abre una vista imprimible con los ejercicios prescritos. Desde el diálogo de impresión,
-            elige “Guardar como PDF”.
+            La pauta incluye los ejercicios terapéuticos guardados. Necesitas al menos uno para
+            generarla; los agentes físicos y las mediciones no se incluyen en esta pauta.
           </p>
           <button
             type="button"
@@ -480,12 +556,19 @@ export function EvaluationTreatmentPanel({ clinicalEvaluationId, patient, evalua
           >
             {interventions.isLoading ? 'Cargando ejercicios…' : 'Generar pauta PDF'}
           </button>
+          {!interventions.isLoading &&
+            !interventions.isError &&
+            !interventions.data?.some((item) => item.kind === 'exercise') && (
+              <p className="mt-2 text-sm text-slate-500">
+                Guarda un ejercicio con series, repeticiones o duración para habilitar la pauta PDF.
+              </p>
+            )}
           {reportError && <p role="alert" className="mt-2 text-sm text-red-700">{reportError}</p>}
           {reportReady && (
             <div className="mt-3 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
               <p role="status" className="text-sm text-emerald-700">
-                Se abrió la vista imprimible. Revisa la pauta antes de entregarla; el navegador no
-                confirma si el archivo PDF llegó a guardarse.
+                Se abrió la pauta en otra pestaña. Allí pulsa “Imprimir o guardar como PDF” y
+                selecciona “Guardar como PDF” en el diálogo del navegador.
               </p>
               <label className="flex items-start gap-2 text-sm text-slate-700">
                 <input
@@ -585,6 +668,9 @@ function MeasurementList({ query }) {
               {measurement.side ? ` (${measurement.side})` : ''}
             </p>
             <p className="text-slate-600">
+              {measurement.measurementContext
+                ? `${ROM_MEASUREMENT_CONTEXT_LABELS[measurement.measurementContext]} · `
+                : ''}
               {measurement.degrees}°
               {measurement.referenceMinDegrees != null || measurement.referenceMaxDegrees != null
                 ? ` · Referencia: ${measurement.referenceMinDegrees ?? '—'}–${measurement.referenceMaxDegrees ?? '—'}°`
